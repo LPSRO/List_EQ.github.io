@@ -114,7 +114,6 @@
 </head>
 <body>
 <div class="container">
-    <!-- BCE Radio Operation Unit - OB Equipment On Loan Form -->
     <div class="card no-print">
         <h2>📋 BCE Radio Operation Unit - OB Equipment On Loan Form</h2>
         <div class="form-group"><label>🎪 Program Name</label><input type="text" id="eventName" placeholder="e.g., Top Ten Gold Song"></div>
@@ -122,7 +121,6 @@
         <div class="form-group"><label>📅 Usage Date</label><input type="date" id="eventDate"></div>
     </div>
 
-    <!-- Inventory Section (hidden by default) -->
     <div class="card no-print hidden-section" id="librarySection">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
             <h2>📦 Inventory <span id="totalCountBadge" class="badge">0</span></h2>
@@ -134,7 +132,6 @@
         <div class="pagination" id="paginationControls"></div>
     </div>
 
-    <!-- Scanner Area (always visible) -->
     <div class="card scanner-area no-print">
         <h2>📷 Scan Barcode</h2>
         <div style="position: relative; display: inline-block; width: 100%;">
@@ -154,7 +151,6 @@
         </div>
     </div>
 
-    <!-- Today's Checkout List -->
     <div class="card">
         <h2>📋 Today's Checkout List <span id="countDisplay">0 / 60</span></h2>
         <div class="progress-info" id="progressMsg">No items scanned yet</div>
@@ -170,7 +166,6 @@
         </div>
     </div>
 
-    <!-- Borrower & Return Info -->
     <div class="card no-print" id="extractorSection">
         <h2>✍️ Borrower & Return Info</h2>
         <div class="form-group"><label>👤 Borrower Name</label><input type="text" id="extractorName" placeholder="Enter borrower name"></div>
@@ -181,7 +176,6 @@
         <div class="form-group"><label>📅 Checkout Date</label><input type="date" id="extractDate"></div>
         <div class="form-group"><label>🔄 Return Date</label><input type="date" id="returnDate"></div>
         <div class="form-group"><label>📝 Prepare By</label><input type="text" id="registrarName" placeholder="Enter preparer name"></div>
-        <!-- Registrar Signature section removed -->
     </div>
 
     <div class="card confirm-section no-print">
@@ -204,7 +198,7 @@
     let currentSearchTerm = "";
     let html5QrCode = null;
     let scannerStarted = false;
-    let signaturePad = null;          // only borrower signature remains
+    let signaturePad = null;
 
     const librarySection = document.getElementById("librarySection");
     const toggleLibraryBtn = document.getElementById("toggleLibraryBtn");
@@ -375,9 +369,21 @@
         const registrarName = escapeHtml(registrarNameInput.value) || "_____________";
         const extractorSigData = (signaturePad && !signaturePad.isEmpty()) ? signaturePad.toDataURL() : "";
         let itemsHtml = "";
-        if (todayItems.length === 0) itemsHtml = `<tr><td colspan="3" style="text-align:center;">(No records)<\/td><\/tr>`;
-        else todayItems.forEach((item, idx) => { itemsHtml += `<tr><td style="text-align:center;">${idx+1}<\td><td>${escapeHtml(item.barcode)}<\/td><td>${escapeHtml(item.name)}<\/td><\/tr>`; });
-        return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>BCE Radio OB Equipment Loan Form</title><style>
+        if (todayItems.length === 0) {
+            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>(No records)</td></tr>";
+        } else {
+            todayItems.forEach((item, idx) => {
+                itemsHtml += `<tr>
+                    <td style="text-align:center;">${idx+1}</td>
+                    <td>${escapeHtml(item.barcode)}</td>
+                    <td>${escapeHtml(item.name)}</td>
+                </tr>`;
+            });
+        }
+        return `<!DOCTYPE html>
+        <html>
+        <head><meta charset="UTF-8"><title>BCE Radio OB Equipment Loan Form</title>
+        <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { font-family: system-ui, 'Noto Sans TC', sans-serif; background: white; padding: 20px; }
             .report-for-print { max-width: 800px; margin: 0 auto; }
@@ -394,35 +400,89 @@
             .sign-line img { max-height: 80px; }
             .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #999; }
             @media print { body { padding: 0; } }
-        <\/style><\/head><body><div class="report-for-print">
-        <h1>📋 BCE Radio OB Equipment Loan Form</h1>
-        <table class="info-table">
-            <tr><strong>Program Name</strong><\/td><td>${eventName}<\/td><\/tr>
-            <tr><strong>Location<\/strong><\/td><td>${eventLocation}<\/td><\/tr>
-            <tr><strong>Usage Date<\/strong><\/td><td>${eventDate}<\/td><\/tr>
-            <tr><strong>Borrower Name<\/strong><\/td><td>${extractorName}<\/td><\/tr>
-            <tr><strong>Department<\/strong><\/td><td>${extractorDepartment}<\/td><\/tr>
-            <tr><strong>Position<\/strong><\/td><td>${extractorPosition}<\/td><\/tr>
-            <tr><strong>Contact Phone<\/strong><\/td><td>${extractorPhone}<\/td><\/tr>
-            <tr><strong>Checkout Date<\/strong><\/td><td>${extractDate}<\/td><\/tr>
-            <tr><strong>Return Date<\/strong><\/td><td>${returnDate}<\/td><\/tr>
-            <tr><strong>Prepare By<\/strong><\/td><td>${registrarName}<\/td><\/tr>
-        <\/table>
-        <h3>📦 Checked Out Items (${todayItems.length})</h3>
-        <table class="item-table"><thead><tr><th>#<\/th><th>Barcode<\/th><th>Item Name<\/th><\/tr><\/thead><tbody>${itemsHtml}<\/tbody><\/table>
-        <div class="sign-area">
-            <div class="sign-box"><h3>✍️ Borrower Signature</h3><div class="sign-line">${extractorSigData ? `<img src="${extractorSigData}" alt="Borrower Signature">` : ""}<\/div><\/div>
-        <\/div>
-        <div class="footer">This document is an official checkout voucher, please keep it properly.<\/div>
-        <\/div><\/body><\/html>`;
+        </style>
+        </head>
+        <body>
+        <div class="report-for-print">
+            <h1>📋 BCE Radio OB Equipment Loan Form</h1>
+            <table class="info-table">
+                <tr><td><strong>Program Name</strong></td><td>${eventName}</td></tr>
+                <tr><td><strong>Location</strong></td><td>${eventLocation}</td></tr>
+                <tr><td><strong>Usage Date</strong></td><td>${eventDate}</td></tr>
+                <tr><td><strong>Borrower Name</strong></td><td>${extractorName}</td></tr>
+                <tr><td><strong>Department</strong></td><td>${extractorDepartment}</td></tr>
+                <tr><td><strong>Position</strong></td><td>${extractorPosition}</td></tr>
+                <tr><td><strong>Contact Phone</strong></td><td>${extractorPhone}</td></tr>
+                <tr><td><strong>Checkout Date</strong></td><td>${extractDate}</td></tr>
+                <tr><td><strong>Return Date</strong></td><td>${returnDate}</td></tr>
+                <tr><td><strong>Prepare By</strong></td><td>${registrarName}</td></tr>
+            </table>
+            <h3>📦 Checked Out Items (${todayItems.length})</h3>
+            <table class="item-table">
+                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th></tr></thead>
+                <tbody>${itemsHtml}</tbody>
+            </table>
+            <div class="sign-area">
+                <div class="sign-box">
+                    <h3>✍️ Borrower Signature</h3>
+                    <div class="sign-line">${extractorSigData ? `<img src="${extractorSigData}" alt="Borrower Signature">` : ""}</div>
+                </div>
+            </div>
+            <div class="footer">This document is an official checkout voucher, please keep it properly.</div>
+        </div>
+        </body>
+        </html>`;
     }
-    function escapeHtml(str) { if (!str) return ""; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
-    async function saveAsPDF() { const reportHtml = generateReportHTML(); const printWindow = window.open('', '_blank'); if (!printWindow) { showToast("❌ Cannot open window, please check if popups are allowed", true); return; } printWindow.document.write(reportHtml); printWindow.document.close(); printWindow.focus(); showToast("✅ Report opened, please use browser's 'Print' function to save as PDF"); }
-    async function confirmAndSave() { saveEventInfo(); saveSignatures(); showToast("✅ Data saved, opening report..."); saveAsPDF(); }
 
-    function setDefaultDates() { const today = new Date().toISOString().split('T')[0]; if (!eventDateInput.value) eventDateInput.value = today; if (!extractDateInput.value) extractDateInput.value = today; if (!returnDateInput.value) returnDateInput.value = today; }
-    function loadEventInfo() { eventNameInput.value = localStorage.getItem("event_name") || ""; eventLocationInput.value = localStorage.getItem("event_location") || ""; eventDateInput.value = localStorage.getItem("event_date") || ""; extractorNameInput.value = localStorage.getItem("extractor_name") || ""; extractorDepartmentInput.value = localStorage.getItem("extractor_department") || ""; extractorPositionInput.value = localStorage.getItem("extractor_position") || ""; extractorPhoneInput.value = localStorage.getItem("extractor_phone") || ""; extractDateInput.value = localStorage.getItem("extract_date") || ""; returnDateInput.value = localStorage.getItem("return_date") || ""; registrarNameInput.value = localStorage.getItem("registrar_name") || ""; }
-    function saveEventInfo() { localStorage.setItem("event_name", eventNameInput.value); localStorage.setItem("event_location", eventLocationInput.value); localStorage.setItem("event_date", eventDateInput.value); localStorage.setItem("extractor_name", extractorNameInput.value); localStorage.setItem("extractor_department", extractorDepartmentInput.value); localStorage.setItem("extractor_position", extractorPositionInput.value); localStorage.setItem("extractor_phone", extractorPhoneInput.value); localStorage.setItem("extract_date", extractDateInput.value); localStorage.setItem("return_date", returnDateInput.value); localStorage.setItem("registrar_name", registrarNameInput.value); }
+    function escapeHtml(str) { if (!str) return ""; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
+
+    async function saveAsPDF() {
+        const reportHtml = generateReportHTML();
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) { showToast("❌ Cannot open window, please check if popups are allowed", true); return; }
+        printWindow.document.write(reportHtml);
+        printWindow.document.close();
+        printWindow.focus();
+        showToast("✅ Report opened, please use browser's 'Print' function to save as PDF");
+    }
+
+    async function confirmAndSave() {
+        saveEventInfo();
+        saveSignatures();
+        showToast("✅ Data saved, opening report...");
+        saveAsPDF();
+    }
+
+    function setDefaultDates() {
+        const today = new Date().toISOString().split('T')[0];
+        if (!eventDateInput.value) eventDateInput.value = today;
+        if (!extractDateInput.value) extractDateInput.value = today;
+        if (!returnDateInput.value) returnDateInput.value = today;
+    }
+    function loadEventInfo() {
+        eventNameInput.value = localStorage.getItem("event_name") || "";
+        eventLocationInput.value = localStorage.getItem("event_location") || "";
+        eventDateInput.value = localStorage.getItem("event_date") || "";
+        extractorNameInput.value = localStorage.getItem("extractor_name") || "";
+        extractorDepartmentInput.value = localStorage.getItem("extractor_department") || "";
+        extractorPositionInput.value = localStorage.getItem("extractor_position") || "";
+        extractorPhoneInput.value = localStorage.getItem("extractor_phone") || "";
+        extractDateInput.value = localStorage.getItem("extract_date") || "";
+        returnDateInput.value = localStorage.getItem("return_date") || "";
+        registrarNameInput.value = localStorage.getItem("registrar_name") || "";
+    }
+    function saveEventInfo() {
+        localStorage.setItem("event_name", eventNameInput.value);
+        localStorage.setItem("event_location", eventLocationInput.value);
+        localStorage.setItem("event_date", eventDateInput.value);
+        localStorage.setItem("extractor_name", extractorNameInput.value);
+        localStorage.setItem("extractor_department", extractorDepartmentInput.value);
+        localStorage.setItem("extractor_position", extractorPositionInput.value);
+        localStorage.setItem("extractor_phone", extractorPhoneInput.value);
+        localStorage.setItem("extract_date", extractDateInput.value);
+        localStorage.setItem("return_date", returnDateInput.value);
+        localStorage.setItem("registrar_name", registrarNameInput.value);
+    }
     function initSignaturePads() {
         const extractorCanvas = document.getElementById("signatureCanvas");
         extractorCanvas.width = extractorCanvas.clientWidth || 600;
@@ -431,17 +491,127 @@
         const savedExtractorSig = localStorage.getItem("signature_data");
         if (savedExtractorSig) signaturePad.fromDataURL(savedExtractorSig);
     }
-    function saveSignatures() { if (signaturePad && !signaturePad.isEmpty()) localStorage.setItem("signature_data", signaturePad.toDataURL()); else localStorage.removeItem("signature_data"); }
+    function saveSignatures() {
+        if (signaturePad && !signaturePad.isEmpty()) localStorage.setItem("signature_data", signaturePad.toDataURL());
+        else localStorage.removeItem("signature_data");
+    }
     function clearSignature() { if (signaturePad) signaturePad.clear(); localStorage.removeItem("signature_data"); }
 
-    async function loadLibraryFromCSV() { syncStatusDiv.innerHTML = "🔄 Loading inventory from GitHub..."; try { const response = await fetch("items.csv?" + new Date().getTime()); if (!response.ok) throw new Error("Cannot load items.csv"); const csvText = await response.text(); const lines = csvText.split(/\r?\n/); let count = 0; const newLibrary = {}; for (let i = 0; i < lines.length; i++) { const line = lines[i].trim(); if (line === "") continue; if (i === 0 && (line.toLowerCase().includes("barcode") || line.toLowerCase().includes("名稱"))) continue; let parts = line.split(","); if (parts.length < 2) continue; let barcode = parts[0].replace(/^"|"$/g, '').trim(); let name = parts[1].replace(/^"|"$/g, '').trim(); if (barcode && name) newLibrary[barcode] = name, count++; } library = newLibrary; syncStatusDiv.innerHTML = `✅ Loaded ${count} items from GitHub`; renderLibraryTable(); } catch (error) { syncStatusDiv.innerHTML = "⚠️ Cannot load items.csv"; library = {}; renderLibraryTable(); } }
-    function getFilteredLibraryArray() { let items = Object.entries(library).map(([barcode, name]) => ({ barcode, name })); if (currentSearchTerm.trim()) { const term = currentSearchTerm.trim().toLowerCase(); items = items.filter(item => item.barcode.toLowerCase().includes(term) || item.name.toLowerCase().includes(term)); } return items; }
-    function renderLibraryTable() { const filtered = getFilteredLibraryArray(); totalCountBadge.innerText = filtered.length; const totalPages = Math.ceil(filtered.length / PAGE_SIZE); if (currentPage > totalPages) currentPage = Math.max(1, totalPages); const start = (currentPage - 1) * PAGE_SIZE; const pageItems = filtered.slice(start, start + PAGE_SIZE); libraryTbody.innerHTML = ""; for (const item of pageItems) { const row = libraryTbody.insertRow(); row.insertCell(0).innerText = item.barcode; row.insertCell(1).innerText = item.name; const delCell = row.insertCell(2); const delBtn = document.createElement("button"); delBtn.innerText = "Delete"; delBtn.className = "delete-btn"; delBtn.onclick = () => { delete library[item.barcode]; renderLibraryTable(); }; delCell.appendChild(delBtn); } renderPagination(totalPages); }
-    function renderPagination(totalPages) { paginationDiv.innerHTML = ""; if (totalPages <= 1) return; const prevBtn = document.createElement("button"); prevBtn.innerText = "◀ Prev"; prevBtn.className = "page-btn"; prevBtn.disabled = (currentPage === 1); prevBtn.onclick = () => { if (currentPage > 1) { currentPage--; renderLibraryTable(); } }; paginationDiv.appendChild(prevBtn); let startPage = Math.max(1, currentPage - 2); let endPage = Math.min(totalPages, startPage + 4); for (let i = startPage; i <= endPage; i++) { const pageBtn = document.createElement("button"); pageBtn.innerText = i; pageBtn.className = "page-btn"; if (i === currentPage) pageBtn.classList.add("active"); pageBtn.onclick = () => { currentPage = i; renderLibraryTable(); }; paginationDiv.appendChild(pageBtn); } const nextBtn = document.createElement("button"); nextBtn.innerText = "Next ▶"; nextBtn.className = "page-btn"; nextBtn.disabled = (currentPage === totalPages); nextBtn.onclick = () => { if (currentPage < totalPages) { currentPage++; renderLibraryTable(); } }; paginationDiv.appendChild(nextBtn); }
-    function updateMaxDisplay() { countDisplay.innerText = `${todayItems.length} / ${MAX_ITEMS}`; progressMsg.innerText = todayItems.length >= MAX_ITEMS ? `Daily limit of ${MAX_ITEMS} items reached` : `Checked out ${todayItems.length}, remaining ${MAX_ITEMS - todayItems.length}`; }
+    async function loadLibraryFromCSV() {
+        syncStatusDiv.innerHTML = "🔄 Loading inventory from GitHub...";
+        try {
+            const response = await fetch("items.csv?" + new Date().getTime());
+            if (!response.ok) throw new Error("Cannot load items.csv");
+            const csvText = await response.text();
+            const lines = csvText.split(/\r?\n/);
+            let count = 0;
+            const newLibrary = {};
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line === "") continue;
+                if (i === 0 && (line.toLowerCase().includes("barcode") || line.toLowerCase().includes("名稱"))) continue;
+                let parts = line.split(",");
+                if (parts.length < 2) continue;
+                let barcode = parts[0].replace(/^"|"$/g, '').trim();
+                let name = parts[1].replace(/^"|"$/g, '').trim();
+                if (barcode && name) newLibrary[barcode] = name, count++;
+            }
+            library = newLibrary;
+            syncStatusDiv.innerHTML = `✅ Loaded ${count} items from GitHub`;
+            renderLibraryTable();
+        } catch (error) {
+            syncStatusDiv.innerHTML = "⚠️ Cannot load items.csv";
+            library = {};
+            renderLibraryTable();
+        }
+    }
+
+    function getFilteredLibraryArray() {
+        let items = Object.entries(library).map(([barcode, name]) => ({ barcode, name }));
+        if (currentSearchTerm.trim()) {
+            const term = currentSearchTerm.trim().toLowerCase();
+            items = items.filter(item => item.barcode.toLowerCase().includes(term) || item.name.toLowerCase().includes(term));
+        }
+        return items;
+    }
+    function renderLibraryTable() {
+        const filtered = getFilteredLibraryArray();
+        totalCountBadge.innerText = filtered.length;
+        const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+        if (currentPage > totalPages) currentPage = Math.max(1, totalPages);
+        const start = (currentPage - 1) * PAGE_SIZE;
+        const pageItems = filtered.slice(start, start + PAGE_SIZE);
+        libraryTbody.innerHTML = "";
+        for (const item of pageItems) {
+            const row = libraryTbody.insertRow();
+            row.insertCell(0).innerText = item.barcode;
+            row.insertCell(1).innerText = item.name;
+            const delCell = row.insertCell(2);
+            const delBtn = document.createElement("button");
+            delBtn.innerText = "Delete";
+            delBtn.className = "delete-btn";
+            delBtn.onclick = () => { delete library[item.barcode]; renderLibraryTable(); };
+            delCell.appendChild(delBtn);
+        }
+        renderPagination(totalPages);
+    }
+
+    function renderPagination(totalPages) {
+        paginationDiv.innerHTML = "";
+        if (totalPages <= 1) return;
+        const prevBtn = document.createElement("button");
+        prevBtn.innerText = "◀ Prev";
+        prevBtn.className = "page-btn";
+        prevBtn.disabled = (currentPage === 1);
+        prevBtn.onclick = () => { if (currentPage > 1) { currentPage--; renderLibraryTable(); } };
+        paginationDiv.appendChild(prevBtn);
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, startPage + 4);
+        for (let i = startPage; i <= endPage; i++) {
+            const pageBtn = document.createElement("button");
+            pageBtn.innerText = i;
+            pageBtn.className = "page-btn";
+            if (i === currentPage) pageBtn.classList.add("active");
+            pageBtn.onclick = () => { currentPage = i; renderLibraryTable(); };
+            paginationDiv.appendChild(pageBtn);
+        }
+        const nextBtn = document.createElement("button");
+        nextBtn.innerText = "Next ▶";
+        nextBtn.className = "page-btn";
+        nextBtn.disabled = (currentPage === totalPages);
+        nextBtn.onclick = () => { if (currentPage < totalPages) { currentPage++; renderLibraryTable(); } };
+        paginationDiv.appendChild(nextBtn);
+    }
+
+    function updateMaxDisplay() {
+        countDisplay.innerText = `${todayItems.length} / ${MAX_ITEMS}`;
+        progressMsg.innerText = todayItems.length >= MAX_ITEMS ? `Daily limit of ${MAX_ITEMS} items reached` : `Checked out ${todayItems.length}, remaining ${MAX_ITEMS - todayItems.length}`;
+    }
     function saveToday() { localStorage.setItem("today_items", JSON.stringify(todayItems)); renderTodayList(); }
-    function loadData() { const storedToday = localStorage.getItem("today_items"); todayItems = storedToday ? JSON.parse(storedToday) : []; renderTodayList(); loadLibraryFromCSV(); loadEventInfo(); setDefaultDates(); }
-    function renderTodayList() { todayListBody.innerHTML = ""; updateMaxDisplay(); todayItems.forEach((item, idx) => { const row = todayListBody.insertRow(); row.insertCell(0).innerText = idx+1; row.insertCell(1).innerText = item.barcode; row.insertCell(2).innerText = item.name; const delCell = row.insertCell(3); const delBtn = document.createElement("button"); delBtn.innerText = "❌"; delBtn.className = "delete-btn"; delBtn.onclick = () => { todayItems.splice(idx, 1); saveToday(); }; delCell.appendChild(delBtn); }); }
+    function loadData() {
+        const storedToday = localStorage.getItem("today_items");
+        todayItems = storedToday ? JSON.parse(storedToday) : [];
+        renderTodayList();
+        loadLibraryFromCSV();
+        loadEventInfo();
+        setDefaultDates();
+    }
+    function renderTodayList() {
+        todayListBody.innerHTML = "";
+        updateMaxDisplay();
+        todayItems.forEach((item, idx) => {
+            const row = todayListBody.insertRow();
+            row.insertCell(0).innerText = idx+1;
+            row.insertCell(1).innerText = item.barcode;
+            row.insertCell(2).innerText = item.name;
+            const delCell = row.insertCell(3);
+            const delBtn = document.createElement("button");
+            delBtn.innerText = "❌";
+            delBtn.className = "delete-btn";
+            delBtn.onclick = () => { todayItems.splice(idx, 1); saveToday(); };
+            delCell.appendChild(delBtn);
+        });
+    }
 
     document.getElementById("startScannerBtn").onclick = startScanner;
     document.getElementById("stopScannerBtn").onclick = stopScanner;
