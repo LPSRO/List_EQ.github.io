@@ -173,6 +173,7 @@
         <div class="form-group"><label>💼 Position</label><input type="text" id="extractorPosition" placeholder="e.g., Engineer"></div>
         <div class="form-group"><label>📞 Contact Phone</label><input type="tel" id="extractorPhone" placeholder="Enter contact phone"></div>
         <div class="form-group"><label>🖊️ Borrower Signature</label><div class="signature-area"><canvas id="signatureCanvas" class="signatureCanvas" width="600" height="150"></canvas><div class="flex-row" style="margin-top: 8px;"><button id="clearSignatureBtn" class="outline">Clear Borrower Signature</button></div></div></div>
+        <div class="form-group"><label>📅 Signature Date</label><input type="date" id="signatureDate"></div>
         <div class="form-group"><label>📅 Checkout Date</label><input type="date" id="extractDate"></div>
         <div class="form-group"><label>🔄 Return Date</label><input type="date" id="returnDate"></div>
         <div class="form-group"><label>📝 Prepare By</label><input type="text" id="registrarName" placeholder="Enter preparer name"></div>
@@ -222,6 +223,7 @@
     const extractorDepartmentInput = document.getElementById("extractorDepartment");
     const extractorPositionInput = document.getElementById("extractorPosition");
     const extractorPhoneInput = document.getElementById("extractorPhone");
+    const signatureDateInput = document.getElementById("signatureDate");
     const extractDateInput = document.getElementById("extractDate");
     const returnDateInput = document.getElementById("returnDate");
     const registrarNameInput = document.getElementById("registrarName");
@@ -364,6 +366,7 @@
         const extractorDepartment = escapeHtml(extractorDepartmentInput.value) || "_____________";
         const extractorPosition = escapeHtml(extractorPositionInput.value) || "_____________";
         const extractorPhone = escapeHtml(extractorPhoneInput.value) || "_____________";
+        const signatureDate = escapeHtml(signatureDateInput.value) || "_____________";
         const extractDate = escapeHtml(extractDateInput.value) || "_____________";
         const returnDate = escapeHtml(returnDateInput.value) || "_____________";
         const registrarName = escapeHtml(registrarNameInput.value) || "_____________";
@@ -413,6 +416,7 @@
                 <tr><td><strong>Department</strong></td><td>${extractorDepartment}</td></tr>
                 <tr><td><strong>Position</strong></td><td>${extractorPosition}</td></tr>
                 <tr><td><strong>Contact Phone</strong></td><td>${extractorPhone}</td></tr>
+                <tr><td><strong>Signature Date</strong></td><td>${signatureDate}</td></tr>
                 <tr><td><strong>Checkout Date</strong></td><td>${extractDate}</td></tr>
                 <tr><td><strong>Return Date</strong></td><td>${returnDate}</td></tr>
                 <tr><td><strong>Prepare By</strong></td><td>${registrarName}</td></tr>
@@ -456,6 +460,7 @@
     function setDefaultDates() {
         const today = new Date().toISOString().split('T')[0];
         if (!eventDateInput.value) eventDateInput.value = today;
+        if (!signatureDateInput.value) signatureDateInput.value = today;
         if (!extractDateInput.value) extractDateInput.value = today;
         if (!returnDateInput.value) returnDateInput.value = today;
     }
@@ -467,6 +472,7 @@
         extractorDepartmentInput.value = localStorage.getItem("extractor_department") || "";
         extractorPositionInput.value = localStorage.getItem("extractor_position") || "";
         extractorPhoneInput.value = localStorage.getItem("extractor_phone") || "";
+        signatureDateInput.value = localStorage.getItem("signature_date") || "";
         extractDateInput.value = localStorage.getItem("extract_date") || "";
         returnDateInput.value = localStorage.getItem("return_date") || "";
         registrarNameInput.value = localStorage.getItem("registrar_name") || "";
@@ -479,6 +485,7 @@
         localStorage.setItem("extractor_department", extractorDepartmentInput.value);
         localStorage.setItem("extractor_position", extractorPositionInput.value);
         localStorage.setItem("extractor_phone", extractorPhoneInput.value);
+        localStorage.setItem("signature_date", signatureDateInput.value);
         localStorage.setItem("extract_date", extractDateInput.value);
         localStorage.setItem("return_date", returnDateInput.value);
         localStorage.setItem("registrar_name", registrarNameInput.value);
@@ -623,7 +630,8 @@
     searchInput.oninput = (e) => { currentSearchTerm = e.target.value; currentPage = 1; renderLibraryTable(); };
     eventNameInput.onchange = saveEventInfo; eventLocationInput.onchange = saveEventInfo; eventDateInput.onchange = saveEventInfo;
     extractorNameInput.onchange = saveEventInfo; extractorDepartmentInput.onchange = saveEventInfo; extractorPositionInput.onchange = saveEventInfo;
-    extractorPhoneInput.onchange = saveEventInfo; extractDateInput.onchange = saveEventInfo; returnDateInput.onchange = saveEventInfo; registrarNameInput.onchange = saveEventInfo;
+    extractorPhoneInput.onchange = saveEventInfo; signatureDateInput.onchange = saveEventInfo;
+    extractDateInput.onchange = saveEventInfo; returnDateInput.onchange = saveEventInfo; registrarNameInput.onchange = saveEventInfo;
 
     loadData();
     loadLibraryVisibility();
