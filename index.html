@@ -352,13 +352,13 @@
         const extractorSigData = (signaturePad && !signaturePad.isEmpty()) ? signaturePad.toDataURL() : "";
         let itemsHtml = "";
         if (todayItems.length === 0) {
-            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>(No records)</td></tr>";
+            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>(No records)瓣</tr>";
         } else {
             todayItems.forEach((item, idx) => {
                 itemsHtml += `<tr>
-                    <td style="text-align:center;">${idx+1}</td>
-                    <td>${escapeHtml(item.barcode)}</td>
-                    <td>${escapeHtml(item.name)}</td>
+                    <td style="text-align:center;">${idx+1}<\/td>
+                    <td>${escapeHtml(item.barcode)}<\/td>
+                    <td>${escapeHtml(item.name)}<\/td>
                 </tr>`;
             });
         }
@@ -393,17 +393,17 @@
         <div class="report-container">
             <h1>📋 Equipment On Loan Form</h1>
             <table class="info-table">
-                <tr><td><strong>Program Name</strong></td><td>${eventName}</td></tr>
-                <tr><td><strong>Location</strong></td><td>${eventLocation}</td></tr>
-                <tr><td><strong>Usage Date</strong></td><td>${eventDate}</td></tr>
-                <tr><td><strong>Borrower Name</strong></td><td>${extractorName}</td></tr>
-                <tr><td><strong>Department</strong></td><td>${extractorDepartment}</td></tr>
-                <tr><td><strong>Position</strong></td><td>${extractorPosition}</td></tr>
-                <tr><td><strong>Contact Phone</strong></td><td>${extractorPhone}</td></tr>
-                <tr><td><strong>Signature Date</strong></td><td>${signatureDate}</td></tr>
-                <tr><td><strong>Checkout Date</strong></td><td>${extractDate}</td></tr>
-                <tr><td><strong>Return Date</strong></td><td>${returnDate}</td></tr>
-                <tr><td><strong>Prepare By</strong></td><td>${registrarName}</td></tr>
+                <tr><th>Program Name</th><td>${eventName}瓣</tr>
+                <tr><th>Location</th><td>${eventLocation}瓣</tr>
+                <tr><th>Usage Date</th><td>${eventDate}瓣</tr>
+                <tr><th>Borrower Name</th><td>${extractorName}瓣</tr>
+                <tr><th>Department</th><td>${extractorDepartment}瓣</tr>
+                <tr><th>Position</th><td>${extractorPosition}瓣</tr>
+                <tr><th>Contact Phone</th><td>${extractorPhone}瓣</tr>
+                <tr><th>Signature Date</th><td>${signatureDate}瓣</tr>
+                <tr><th>Checkout Date</th><td>${extractDate}瓣</tr>
+                <tr><th>Return Date</th><td>${returnDate}瓣</tr>
+                <tr><th>Prepare By</th><td>${registrarName}瓣</tr>
             </table>
             <h3>📦 Checked Out Items (${todayItems.length})</h3>
             <table class="item-table"><thead><tr><th>#</th><th>Barcode</th><th>Item Name</th></tr></thead><tbody>${itemsHtml}</tbody></table>
@@ -420,19 +420,21 @@
                 const element = document.querySelector('.report-container');
                 const opt = { margin: [0.5,0.5,0.5,0.5], filename: 'Equipment_On_Loan_Form.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
                 try {
+                    // 產生 PDF 並下載
                     const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
-                    if (navigator.share) {
-                        await navigator.share({
-                            title: 'Equipment On Loan Form',
-                            text: 'Please find the attached loan form.',
-                            files: [new File([pdfBlob], 'Equipment_On_Loan_Form.pdf', { type: 'application/pdf' })]
-                        });
-                    } else {
-                        alert('Your browser does not support direct sharing. Please use the Print button to save as PDF and then email it.');
-                    }
+                    const url = URL.createObjectURL(pdfBlob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'Equipment_On_Loan_Form.pdf';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    // 開啟郵件客戶端，預設收件人、主旨、內文
+                    window.location.href = "mailto:ylee38@lenovo.com?subject=Equipment%20On%20Loan%20Form&body=Please%20find%20the%20attached%20PDF%20document.";
                 } catch(err) {
                     console.error(err);
-                    alert('Failed to generate PDF or share. ' + err.message);
+                    alert('Failed to generate PDF. ' + err.message);
                 }
             };
         <\/script>
