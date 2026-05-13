@@ -336,7 +336,7 @@
         } else { scannerStarted = false; hideScanLine(); }
     }
 
-    // 產生報告 HTML (已修正，無任何多余字符)
+    // 產生報告 HTML (已優化分頁)
     function generateReportHTML() {
         const eventName = escapeHtml(eventNameInput.value) || "_____________";
         const eventLocation = escapeHtml(eventLocationInput.value) || "_____________";
@@ -352,13 +352,13 @@
         const extractorSigData = (signaturePad && !signaturePad.isEmpty()) ? signaturePad.toDataURL() : "";
         let itemsHtml = "";
         if (todayItems.length === 0) {
-            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>(No records)</td></tr>";
+            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>(No records)瓣</tr>";
         } else {
             todayItems.forEach((item, idx) => {
                 itemsHtml += `<tr>
-                    <td style="text-align:center;">${idx+1}</td>
-                    <td>${escapeHtml(item.barcode)}</td>
-                    <td>${escapeHtml(item.name)}</td>
+                    <td style="text-align:center;">${idx+1}瓣
+                    <td>${escapeHtml(item.barcode)}瓣
+                    <td>${escapeHtml(item.name)}瓣
                 </tr>`;
             });
         }
@@ -371,13 +371,13 @@
             body { font-family: system-ui, 'Noto Sans TC', sans-serif; background: white; padding: 20px; }
             .report-container { max-width: 800px; margin: 0 auto; }
             h1 { text-align: center; font-size: 24px; margin: 20px 0; }
-            .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; page-break-inside: avoid; }
             .info-table td { padding: 8px; border: 1px solid #aaa; }
             .info-table td:first-child { width: 30%; background: #f5f5f5; }
-            .item-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            .item-table { width: 100%; border-collapse: collapse; margin: 20px 0; page-break-inside: avoid; }
             .item-table th, .item-table td { border: 1px solid #aaa; padding: 8px; text-align: left; }
             .item-table th { background: #f5f5f5; text-align: center; }
-            .sign-area { margin-top: 30px; }
+            .sign-area { margin-top: 30px; page-break-inside: avoid; }
             .sign-box { width: 100%; }
             .sign-line { border-bottom: 1px solid #000; min-height: 80px; margin-top: 10px; width: 33%; margin-left: 0; }
             .sign-line img { max-height: 80px; }
@@ -393,17 +393,17 @@
         <div class="report-container">
             <h1>📋 Equipment On Loan Form</h1>
             <table class="info-table">
-                <tr><td><strong>Program Name</strong></td><td>${eventName}</td></tr>
-                <tr><td><strong>Location</strong></td><td>${eventLocation}</td></tr>
-                <tr><td><strong>Usage Date</strong></td><td>${eventDate}</td></tr>
-                <tr><td><strong>Borrower Name</strong></td><td>${extractorName}</td></tr>
-                <tr><td><strong>Department</strong></td><td>${extractorDepartment}</td></tr>
-                <tr><td><strong>Position</strong></td><td>${extractorPosition}</td></tr>
-                <tr><td><strong>Contact Phone</strong></td><td>${extractorPhone}</td></tr>
-                <tr><td><strong>Signature Date</strong></td><td>${signatureDate}</td></tr>
-                <tr><td><strong>Checkout Date</strong></td><td>${extractDate}</td></tr>
-                <tr><td><strong>Return Date</strong></td><td>${returnDate}</td></tr>
-                <tr><td><strong>Prepare By</strong></td><td>${registrarName}</td></tr>
+                <tr><th>Program Name</th><td>${eventName}瓣</tr>
+                <tr><th>Location</th><td>${eventLocation}瓣</tr>
+                <tr><th>Usage Date</th><td>${eventDate}瓣</tr>
+                <tr><th>Borrower Name</th><td>${extractorName}瓣</tr>
+                <tr><th>Department</th><td>${extractorDepartment}瓣</tr>
+                <tr><th>Position</th><td>${extractorPosition}瓣</tr>
+                <tr><th>Contact Phone</th><td>${extractorPhone}瓣</tr>
+                <tr><th>Signature Date</th><td>${signatureDate}瓣</tr>
+                <tr><th>Checkout Date</th><td>${extractDate}瓣</tr>
+                <td><th>Return Date</th><td>${returnDate}瓣</table>
+                <tr><th>Prepare By</th><td>${registrarName}瓣</tr>
             </table>
             <h3>📦 Checked Out Items (${todayItems.length})</h3>
             <table class="item-table"><thead><tr><th>#</th><th>Barcode</th><th>Item Name</th></tr></thead><tbody>${itemsHtml}</tbody></table>
@@ -418,7 +418,15 @@
             document.getElementById('printBtn').onclick = () => { window.print(); };
             document.getElementById('emailBtn').onclick = async () => {
                 const element = document.querySelector('.report-container');
-                const opt = { margin: [0.5,0.5,0.5,0.5], filename: 'Equipment_On_Loan_Form.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
+                // 優化的 PDF 參數，避免截斷
+                const opt = {
+                    margin: [0.5, 0.5, 0.5, 0.5],
+                    filename: 'Equipment_On_Loan_Form.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, letterRendering: true, useCORS: true, logging: false },
+                    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+                    pagebreak: { mode: 'css', before: '.before-element', after: '.after-element', avoid: 'tr,td,.sign-box' }
+                };
                 try {
                     const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
                     const url = URL.createObjectURL(pdfBlob);
