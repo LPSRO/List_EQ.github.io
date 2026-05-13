@@ -337,7 +337,7 @@
         } else { scannerStarted = false; hideScanLine(); }
     }
 
-    // 產生報告 HTML（包含 Email 按鈕）
+    // 產生報告 HTML
     function generateReportHTML() {
         const eventName = escapeHtml(eventNameInput.value) || "_____________";
         const eventLocation = escapeHtml(eventLocationInput.value) || "_____________";
@@ -357,7 +357,7 @@
         } else {
             todayItems.forEach((item, idx) => {
                 itemsHtml += `<tr>
-                    <td style="text-align:center;">${idx+1}</td>
+                    <td style="text-align:center;">${idx+1}<\/td>
                     <td>${escapeHtml(item.barcode)}<\/td>
                     <td>${escapeHtml(item.name)}<\/td>
                 </tr>`;
@@ -380,7 +380,7 @@
             .item-table th { background: #f5f5f5; text-align: center; }
             .sign-area { margin-top: 30px; }
             .sign-box { width: 100%; }
-            .sign-line { border-bottom: 1px solid #000; min-height: 80px; margin-top: 10px; }
+            .sign-line { border-bottom: 1px solid #000; min-height: 80px; margin-top: 10px; width: 33%; margin-left: 0; }
             .sign-line img { max-height: 80px; }
             .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #999; }
             .report-actions { text-align: center; margin: 30px 0 20px; }
@@ -394,7 +394,7 @@
         <div class="report-container">
             <h1>📋 Equipment On Loan Form</h1>
             <table class="info-table">
-                <tr><td><strong>Program Name</strong><\/td><td>${eventName}<\/td><\/tr>
+                <tr><td><strong>Program Name<\/strong><\/td><td>${eventName}<\/td><\/tr>
                 <tr><td><strong>Location<\/strong><\/td><td>${eventLocation}<\/td><\/tr>
                 <tr><td><strong>Usage Date<\/strong><\/td><td>${eventDate}<\/td><\/tr>
                 <tr><td><strong>Borrower Name<\/strong><\/td><td>${extractorName}<\/td><\/tr>
@@ -405,16 +405,16 @@
                 <tr><td><strong>Checkout Date<\/strong><\/td><td>${extractDate}<\/td><\/tr>
                 <tr><td><strong>Return Date<\/strong><\/td><td>${returnDate}<\/td><\/tr>
                 <tr><td><strong>Prepare By<\/strong><\/td><td>${registrarName}<\/td><\/tr>
-            沉?
-            <h3>📦 Checked Out Items (${todayItems.length})</h3>
-            <table class="item-table"><thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><\/tr><\/thead><tbody>${itemsHtml}<\/tbody><\/table>
-            <div class="sign-area"><div class="sign-box"><h3>✍️ Borrower Signature</h3><div class="sign-line">${extractorSigData ? `<img src="${extractorSigData}" alt="Signature">` : ""}<\/div><\/div><\/div>
+            <\/table>
+            <h3>📦 Checked Out Items (${todayItems.length})<\/h3>
+            <table class="item-table"><thead><tr><th>#<\/th><th>Barcode<\/th><th>Item Name<\/th><\/tr><\/thead><tbody>${itemsHtml}<\/tbody><\/table>
+            <div class="sign-area"><div class="sign-box"><h3>✍️ Borrower Signature<\/h3><div class="sign-line">${extractorSigData ? `<img src="${extractorSigData}" alt="Signature">` : ""}<\/div><\/div><\/div>
             <div class="footer">This document is an official checkout voucher, please keep it properly.<\/div>
             <div class="report-actions">
-                <button id="printBtn">🖨️ Print / Save as PDF</button>
-                <button id="emailBtn">📧 Email PDF</button>
-            </div>
-        </div>
+                <button id="printBtn">🖨️ Print / Save as PDF<\/button>
+                <button id="emailBtn">📧 Email PDF to ylee38@lenovo.com<\/button>
+            <\/div>
+        <\/div>
         <script>
             document.getElementById('printBtn').onclick = () => { window.print(); };
             document.getElementById('emailBtn').onclick = async () => {
@@ -422,25 +422,21 @@
                 const opt = { margin: [0.5,0.5,0.5,0.5], filename: 'Equipment_On_Loan_Form.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
                 try {
                     const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
-                    if (navigator.share) {
-                        await navigator.share({
-                            title: 'Equipment On Loan Form',
-                            text: 'Please find the attached loan form.',
-                            files: [new File([pdfBlob], 'Equipment_On_Loan_Form.pdf', { type: 'application/pdf' })]
-                        });
-                    } else {
-                        // 降級：提示下載
-                        const url = URL.createObjectURL(pdfBlob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'Equipment_On_Loan_Form.pdf';
-                        a.click();
-                        URL.revokeObjectURL(url);
-                        alert('Your browser does not support direct sharing. The PDF has been downloaded.');
-                    }
+                    // 下載 PDF
+                    const url = URL.createObjectURL(pdfBlob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'Equipment_On_Loan_Form.pdf';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    // 開啟郵件客戶端，收件人已填好
+                    window.location.href = "mailto:ylee38@lenovo.com?subject=Equipment%20On%20Loan%20Form&body=Please%20find%20the%20attached%20PDF%20document.";
+                    alert('PDF has been downloaded. Please attach it to the opened email message.');
                 } catch(err) {
                     console.error(err);
-                    alert('Failed to generate PDF or share. ' + err.message);
+                    alert('Failed to generate PDF: ' + err.message);
                 }
             };
         <\/script>
@@ -466,7 +462,7 @@
         saveAsPDF();
     }
 
-    // 儲存與載入輔助函式 (省略與原本相同，因篇幅限制)
+    // 儲存與載入輔助函式
     function setDefaultDates() {
         const today = new Date().toISOString().split('T')[0];
         if (!eventDateInput.value) eventDateInput.value = today;
