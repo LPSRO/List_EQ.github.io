@@ -336,7 +336,7 @@
         } else { scannerStarted = false; hideScanLine(); }
     }
 
-    // 產生報告 HTML (確保一行一個物品)
+    // 產生報告 HTML (無任何「瓣」字，表格間距縮小)
     function generateReportHTML() {
         const eventName = escapeHtml(eventNameInput.value) || "_____________";
         const eventLocation = escapeHtml(eventLocationInput.value) || "_____________";
@@ -352,7 +352,7 @@
         const extractorSigData = (signaturePad && !signaturePad.isEmpty()) ? signaturePad.toDataURL() : "";
         let itemsHtml = "";
         if (todayItems.length === 0) {
-            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>No records</td><tr>";
+            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>No records</td></tr>";
         } else {
             for (let i = 0; i < todayItems.length; i++) {
                 const item = todayItems[i];
@@ -379,7 +379,7 @@
             h1 { text-align: center; font-size: 14pt; margin: 10px 0; }
             .info-table { width: 100%; border-collapse: collapse; margin: 12px 0; page-break-inside: avoid; }
             .info-table td { padding: 4px 6px; border: 1px solid #aaa; font-size: 9pt; }
-            .info-table td:first-child { width: 30%; background: #f5f5f5; font-weight: 600; }
+            .info-table td:first-child { width: 25%; background: #f5f5f5; font-weight: 600; }
             .item-table { width: 100%; border-collapse: collapse; margin: 10px 0; page-break-inside: avoid; }
             .item-table th, .item-table td { border: 1px solid #aaa; padding: 4px 6px; text-align: left; font-size: 9pt; }
             .item-table th { background: #f5f5f5; text-align: center; }
@@ -400,17 +400,17 @@
         <div class="report-container">
             <h1>📋 Equipment On Loan Form</h1>
             <table class="info-table">
-                <tr><th>Program Name</th><td>${eventName}瓣</tr>
-                <tr><th>Location</th><td>${eventLocation}瓣</tr>
-                <tr><th>Usage Date</th><td>${eventDate}瓣</tr>
-                <tr><th>Borrower Name</th><td>${extractorName}瓣</tr>
-                <tr><th>Department</th><td>${extractorDepartment}瓣</tr>
-                <tr><th>Position</th><td>${extractorPosition}瓣</tr>
-                <tr><th>Contact Phone</th><td>${extractorPhone}瓣</tr>
-                <tr><th>Signature Date</th><td>${signatureDate}瓣</tr>
-                <tr><th>Checkout Date</th><td>${extractDate}瓣</tr>
-                <tr><th>Return Date</th><td>${returnDate}瓣</tr>
-                <tr><th>Prepare By</th><td>${registrarName}瓣</tr>
+                <tr><th>Program Name</th><td>${eventName}</td></tr>
+                <tr><th>Location</th><td>${eventLocation}</td></tr>
+                <tr><th>Usage Date</th><td>${eventDate}</td></tr>
+                <tr><th>Borrower Name</th><td>${extractorName}</td></tr>
+                <tr><th>Department</th><td>${extractorDepartment}</td></tr>
+                <tr><th>Position</th><td>${extractorPosition}</td></tr>
+                <tr><th>Contact Phone</th><td>${extractorPhone}</td></tr>
+                <tr><th>Signature Date</th><td>${signatureDate}</td></tr>
+                <tr><th>Checkout Date</th><td>${extractDate}</td></tr>
+                <tr><th>Return Date</th><td>${returnDate}</td></tr>
+                <tr><th>Prepare By</th><td>${registrarName}</td></tr>
             </table>
             <h3>📦 Checked Out Items (${todayItems.length})</h3>
             <table class="item-table">
