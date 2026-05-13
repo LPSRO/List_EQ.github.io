@@ -7,6 +7,7 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
     <style>
+        /* 主介面樣式保持不變 */
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', 'Noto Sans TC', sans-serif; }
         body { background: #f0f2f5; margin: 0; padding: 16px; padding-bottom: 80px; }
         .container { max-width: 700px; margin: 0 auto; }
@@ -106,7 +107,7 @@
         </div>
         <div id="syncStatus" class="sync-status">🔄 Loading inventory from GitHub...</div>
         <div class="flex-row"><input type="text" id="searchLibrary" placeholder="🔍 Search barcode or item name" style="flex:1;"></div>
-        <div style="max-height: 300px; overflow-y: auto;"><table id="libraryTable"><thead><tr><th>Barcode</th><th>Item Name</th><th></th><tr></thead><tbody id="libraryTbody"></tbody></table></div>
+        <div style="max-height: 300px; overflow-y: auto;"><table id="libraryTable"><thead><tr><th>Barcode</th><th>Item Name</th><th></th></tr></thead><tbody id="libraryTbody"></tbody></table></div>
         <div class="pagination" id="paginationControls"></div>
     </div>
 
@@ -136,7 +137,7 @@
             <table id="todayListTable">
                 <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th></tr></thead>
                 <tbody id="todayListBody"></tbody>
-            </table>
+            </tr>
         </div>
         <div class="flex-row">
             <button id="savePdfBtn">📄 Save as PDF</button>
@@ -336,7 +337,7 @@
         } else { scannerStarted = false; hideScanLine(); }
     }
 
-    // 產生報告 HTML (無任何多餘字符)
+    // 產生報告 HTML (字體已縮小，行距壓縮，確保A4可容納20+物品)
     function generateReportHTML() {
         const eventName = escapeHtml(eventNameInput.value) || "_____________";
         const eventLocation = escapeHtml(eventLocationInput.value) || "_____________";
@@ -352,14 +353,14 @@
         const extractorSigData = (signaturePad && !signaturePad.isEmpty()) ? signaturePad.toDataURL() : "";
         let itemsHtml = "";
         if (todayItems.length === 0) {
-            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>(No records)</td></tr>";
+            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>(No records)瓣</tr>";
         } else {
             todayItems.forEach((item, idx) => {
                 itemsHtml += `<tr>
-                    <td style="text-align:center;">${idx+1}</td>
-                    <td>${escapeHtml(item.barcode)}</td>
-                    <td>${escapeHtml(item.name)}</td>
-                </tr>`;
+                    <td style="text-align:center; padding:4px 6px;">${idx+1}</td>
+                    <td style="padding:4px 6px;">${escapeHtml(item.barcode)}</td>
+                    <td style="padding:4px 6px;">${escapeHtml(item.name)}</td>
+                </table>`;
             });
         }
         return `<!DOCTYPE html>
@@ -372,24 +373,24 @@
                 font-family: system-ui, 'Noto Sans TC', sans-serif; 
                 background: white; 
                 padding: 20px; 
-                font-size: 12pt;
+                font-size: 9pt;
             }
             .report-container { max-width: 800px; margin: 0 auto; }
-            h1 { text-align: center; font-size: 18pt; margin: 20px 0; }
-            .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; page-break-inside: avoid; }
-            .info-table td { padding: 8px; border: 1px solid #aaa; font-size: 12pt; }
+            h1 { text-align: center; font-size: 14pt; margin: 10px 0; }
+            .info-table { width: 100%; border-collapse: collapse; margin: 12px 0; page-break-inside: avoid; }
+            .info-table td { padding: 4px 6px; border: 1px solid #aaa; font-size: 9pt; }
             .info-table td:first-child { width: 30%; background: #f5f5f5; font-weight: 600; }
-            .item-table { width: 100%; border-collapse: collapse; margin: 20px 0; page-break-inside: avoid; }
-            .item-table th, .item-table td { border: 1px solid #aaa; padding: 8px; text-align: left; font-size: 12pt; }
+            .item-table { width: 100%; border-collapse: collapse; margin: 10px 0; page-break-inside: avoid; }
+            .item-table th, .item-table td { border: 1px solid #aaa; padding: 4px 6px; text-align: left; font-size: 9pt; }
             .item-table th { background: #f5f5f5; text-align: center; }
-            h3 { font-size: 14pt; margin: 15px 0; }
-            .sign-area { margin-top: 30px; page-break-inside: avoid; }
+            h3 { font-size: 11pt; margin: 10px 0 5px; }
+            .sign-area { margin-top: 20px; page-break-inside: avoid; }
             .sign-box { width: 100%; }
-            .sign-line { border-bottom: 1px solid #000; min-height: 80px; margin-top: 10px; width: 33%; margin-left: 0; }
-            .sign-line img { max-height: 80px; }
-            .footer { margin-top: 40px; text-align: center; font-size: 10pt; color: #999; }
-            .report-actions { text-align: center; margin: 30px 0 20px; }
-            .report-actions button { background: #007aff; border: none; color: white; padding: 10px 20px; border-radius: 40px; font-size: 12pt; cursor: pointer; margin: 0 10px; }
+            .sign-line { border-bottom: 1px solid #000; min-height: 60px; margin-top: 8px; width: 33%; margin-left: 0; }
+            .sign-line img { max-height: 60px; }
+            .footer { margin-top: 20px; text-align: center; font-size: 8pt; color: #999; }
+            .report-actions { text-align: center; margin: 20px 0; }
+            .report-actions button { background: #007aff; border: none; color: white; padding: 6px 12px; border-radius: 30px; font-size: 10pt; cursor: pointer; margin: 0 8px; }
             @media print {
                 .report-actions { display: none; }
             }
@@ -399,17 +400,17 @@
         <div class="report-container">
             <h1>📋 Equipment On Loan Form</h1>
             <table class="info-table">
-                <tr><td><strong>Program Name</strong></td><td>${eventName}</td></tr>
-                <tr><td><strong>Location</strong></td><td>${eventLocation}</td></tr>
-                <tr><td><strong>Usage Date</strong></td><td>${eventDate}</td></tr>
-                <tr><td><strong>Borrower Name</strong></td><td>${extractorName}</td></tr>
-                <tr><td><strong>Department</strong></td><td>${extractorDepartment}</td></tr>
-                <tr><td><strong>Position</strong></td><td>${extractorPosition}</td></tr>
-                <tr><td><strong>Contact Phone</strong></td><td>${extractorPhone}</td></tr>
-                <tr><td><strong>Signature Date</strong></td><td>${signatureDate}</td></tr>
-                <tr><td><strong>Checkout Date</strong></td><td>${extractDate}</td></tr>
-                <tr><td><strong>Return Date</strong></td><td>${returnDate}</td></tr>
-                <tr><td><strong>Prepare By</strong></td><td>${registrarName}</td></tr>
+                <tr><th>Program Name</th><td>${eventName}</td></tr>
+                <tr><th>Location</th><td>${eventLocation}</td></tr>
+                <tr><th>Usage Date</th><td>${eventDate}</td></tr>
+                <tr><th>Borrower Name</th><td>${extractorName}</td></tr>
+                <tr><th>Department</th><td>${extractorDepartment}</td></tr>
+                <tr><th>Position</th><td>${extractorPosition}</td></tr>
+                <tr><th>Contact Phone</th><td>${extractorPhone}</td></tr>
+                <tr><th>Signature Date</th><td>${signatureDate}</td></tr>
+                <tr><th>Checkout Date</th><td>${extractDate}</td></tr>
+                <tr><th>Return Date</th><td>${returnDate}</td></tr>
+                <tr><th>Prepare By</th><td>${registrarName}</td></tr>
             </table>
             <h3>📦 Checked Out Items (${todayItems.length})</h3>
             <table class="item-table">
@@ -444,7 +445,6 @@
                             files: [new File([pdfBlob], 'Equipment_On_Loan_Form.pdf', { type: 'application/pdf' })]
                         });
                     } else {
-                        // 備用：下載 PDF
                         const url = URL.createObjectURL(pdfBlob);
                         const a = document.createElement('a');
                         a.href = url;
