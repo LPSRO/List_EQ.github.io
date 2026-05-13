@@ -86,7 +86,6 @@
         .confirm-section { text-align: center; margin-top: 20px; margin-bottom: 20px; }
         .toast-msg { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #34c759; color: white; padding: 12px 24px; border-radius: 40px; font-weight: 500; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         .toast-error { background: #ff3b30; }
-        /* 報告視窗內樣式 */
         .report-actions { text-align: center; margin: 20px 0; }
         .report-actions button { margin: 0 10px; padding: 8px 16px; }
     </style>
@@ -107,7 +106,7 @@
         </div>
         <div id="syncStatus" class="sync-status">🔄 Loading inventory from GitHub...</div>
         <div class="flex-row"><input type="text" id="searchLibrary" placeholder="🔍 Search barcode or item name" style="flex:1;"></div>
-        <div style="max-height: 300px; overflow-y: auto;"><table id="libraryTable"><thead><tr><th>Barcode</th><th>Item Name</th><th></th><tr></thead><tbody id="libraryTbody"></tbody></table></div>
+        <div style="max-height: 300px; overflow-y: auto;"><table id="libraryTable"><thead><tr><th>Barcode</th><th>Item Name</th><th></th></tr></thead><tbody id="libraryTbody"></tbody></table></div>
         <div class="pagination" id="paginationControls"></div>
     </div>
 
@@ -353,7 +352,7 @@
         const extractorSigData = (signaturePad && !signaturePad.isEmpty()) ? signaturePad.toDataURL() : "";
         let itemsHtml = "";
         if (todayItems.length === 0) {
-            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>(No records)瓣</tr>";
+            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>(No records)</td></tr>";
         } else {
             todayItems.forEach((item, idx) => {
                 itemsHtml += `<tr>
@@ -366,7 +365,7 @@
         return `<!DOCTYPE html>
         <html>
         <head><meta charset="UTF-8"><title>Equipment On Loan Form</title>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"><\/script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { font-family: system-ui, 'Noto Sans TC', sans-serif; background: white; padding: 20px; }
@@ -394,17 +393,17 @@
         <div class="report-container">
             <h1>📋 Equipment On Loan Form</h1>
             <table class="info-table">
-                <tr><th>Program Name</th><td>${eventName}</td></tr>
-                <tr><th>Location</th><td>${eventLocation}</td></tr>
-                <tr><th>Usage Date</th><td>${eventDate}</td></tr>
-                <tr><th>Borrower Name</th><td>${extractorName}</td></tr>
-                <tr><th>Department</th><td>${extractorDepartment}</td></tr>
-                <tr><th>Position</th><td>${extractorPosition}</td></tr>
-                <tr><th>Contact Phone</th><td>${extractorPhone}</td></tr>
-                <tr><th>Signature Date</th><td>${signatureDate}</td></tr>
-                <tr><th>Checkout Date</th><td>${extractDate}</td></tr>
-                <tr><th>Return Date</th><td>${returnDate}</td></tr>
-                <tr><th>Prepare By</th><td>${registrarName}</td></tr>
+                <tr><td><strong>Program Name</strong></td><td>${eventName}</td></tr>
+                <tr><td><strong>Location</strong></td><td>${eventLocation}</td></tr>
+                <tr><td><strong>Usage Date</strong></td><td>${eventDate}</td></tr>
+                <tr><td><strong>Borrower Name</strong></td><td>${extractorName}</td></tr>
+                <tr><td><strong>Department</strong></td><td>${extractorDepartment}</td></tr>
+                <tr><td><strong>Position</strong></td><td>${extractorPosition}</td></tr>
+                <tr><td><strong>Contact Phone</strong></td><td>${extractorPhone}</td></tr>
+                <tr><td><strong>Signature Date</strong></td><td>${signatureDate}</td></tr>
+                <tr><td><strong>Checkout Date</strong></td><td>${extractDate}</td></tr>
+                <tr><td><strong>Return Date</strong></td><td>${returnDate}</td></tr>
+                <tr><td><strong>Prepare By</strong></td><td>${registrarName}</td></tr>
             </table>
             <h3>📦 Checked Out Items (${todayItems.length})</h3>
             <table class="item-table"><thead><tr><th>#</th><th>Barcode</th><th>Item Name</th></tr></thead><tbody>${itemsHtml}</tbody></table>
@@ -436,7 +435,7 @@
                     alert('Failed to generate PDF or share. ' + err.message);
                 }
             };
-        </script>
+        <\/script>
         </body>
         </html>`;
     }
@@ -459,7 +458,6 @@
         saveAsPDF();
     }
 
-    // 儲存與載入輔助函式
     function setDefaultDates() {
         const today = new Date().toISOString().split('T')[0];
         if (!eventDateInput.value) eventDateInput.value = today;
