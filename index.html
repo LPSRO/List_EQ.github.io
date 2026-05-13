@@ -7,7 +7,6 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
     <style>
-        /* 主介面樣式保持不變 */
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', 'Noto Sans TC', sans-serif; }
         body { background: #f0f2f5; margin: 0; padding: 16px; padding-bottom: 80px; }
         .container { max-width: 700px; margin: 0 auto; }
@@ -137,7 +136,7 @@
             <table id="todayListTable">
                 <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th></tr></thead>
                 <tbody id="todayListBody"></tbody>
-            </tr>
+            </table>
         </div>
         <div class="flex-row">
             <button id="savePdfBtn">📄 Save as PDF</button>
@@ -337,7 +336,7 @@
         } else { scannerStarted = false; hideScanLine(); }
     }
 
-    // 產生報告 HTML (字體已縮小，行距壓縮，確保A4可容納20+物品)
+    // 產生報告 HTML (確保一行一個物品)
     function generateReportHTML() {
         const eventName = escapeHtml(eventNameInput.value) || "_____________";
         const eventLocation = escapeHtml(eventLocationInput.value) || "_____________";
@@ -353,15 +352,16 @@
         const extractorSigData = (signaturePad && !signaturePad.isEmpty()) ? signaturePad.toDataURL() : "";
         let itemsHtml = "";
         if (todayItems.length === 0) {
-            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>(No records)瓣</tr>";
+            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>No records</td><tr>";
         } else {
-            todayItems.forEach((item, idx) => {
+            for (let i = 0; i < todayItems.length; i++) {
+                const item = todayItems[i];
                 itemsHtml += `<tr>
-                    <td style="text-align:center; padding:4px 6px;">${idx+1}</td>
+                    <td style="text-align:center; padding:4px 6px;">${i+1}</td>
                     <td style="padding:4px 6px;">${escapeHtml(item.barcode)}</td>
                     <td style="padding:4px 6px;">${escapeHtml(item.name)}</td>
-                </table>`;
-            });
+                </tr>`;
+            }
         }
         return `<!DOCTYPE html>
         <html>
@@ -400,17 +400,17 @@
         <div class="report-container">
             <h1>📋 Equipment On Loan Form</h1>
             <table class="info-table">
-                <tr><th>Program Name</th><td>${eventName}</td></tr>
-                <tr><th>Location</th><td>${eventLocation}</td></tr>
-                <tr><th>Usage Date</th><td>${eventDate}</td></tr>
-                <tr><th>Borrower Name</th><td>${extractorName}</td></tr>
-                <tr><th>Department</th><td>${extractorDepartment}</td></tr>
-                <tr><th>Position</th><td>${extractorPosition}</td></tr>
-                <tr><th>Contact Phone</th><td>${extractorPhone}</td></tr>
-                <tr><th>Signature Date</th><td>${signatureDate}</td></tr>
-                <tr><th>Checkout Date</th><td>${extractDate}</td></tr>
-                <tr><th>Return Date</th><td>${returnDate}</td></tr>
-                <tr><th>Prepare By</th><td>${registrarName}</td></tr>
+                <tr><th>Program Name</th><td>${eventName}瓣</tr>
+                <tr><th>Location</th><td>${eventLocation}瓣</tr>
+                <tr><th>Usage Date</th><td>${eventDate}瓣</tr>
+                <tr><th>Borrower Name</th><td>${extractorName}瓣</tr>
+                <tr><th>Department</th><td>${extractorDepartment}瓣</tr>
+                <tr><th>Position</th><td>${extractorPosition}瓣</tr>
+                <tr><th>Contact Phone</th><td>${extractorPhone}瓣</tr>
+                <tr><th>Signature Date</th><td>${signatureDate}瓣</tr>
+                <tr><th>Checkout Date</th><td>${extractDate}瓣</tr>
+                <tr><th>Return Date</th><td>${returnDate}瓣</tr>
+                <tr><th>Prepare By</th><td>${registrarName}瓣</tr>
             </table>
             <h3>📦 Checked Out Items (${todayItems.length})</h3>
             <table class="item-table">
