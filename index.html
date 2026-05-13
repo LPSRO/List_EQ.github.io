@@ -134,7 +134,7 @@
         <div class="progress-info" id="progressMsg">No items scanned yet</div>
         <div style="max-height: 300px; overflow-y: auto;">
             <table id="todayListTable">
-                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th></tr></thead>
+                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th></td></thead>
                 <tbody id="todayListBody"></tbody>
             </table>
         </div>
@@ -336,7 +336,7 @@
         } else { scannerStarted = false; hideScanLine(); }
     }
 
-    // 產生報告 HTML (已優化分頁)
+    // 產生報告 HTML (已確保字體大小正常)
     function generateReportHTML() {
         const eventName = escapeHtml(eventNameInput.value) || "_____________";
         const eventLocation = escapeHtml(eventLocationInput.value) || "_____________";
@@ -352,7 +352,7 @@
         const extractorSigData = (signaturePad && !signaturePad.isEmpty()) ? signaturePad.toDataURL() : "";
         let itemsHtml = "";
         if (todayItems.length === 0) {
-            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>(No records)瓣</tr>";
+            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>(No records)瓣<table>";
         } else {
             todayItems.forEach((item, idx) => {
                 itemsHtml += `<tr>
@@ -368,22 +368,28 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: system-ui, 'Noto Sans TC', sans-serif; background: white; padding: 20px; }
+            body { 
+                font-family: system-ui, 'Noto Sans TC', sans-serif; 
+                background: white; 
+                padding: 20px; 
+                font-size: 12pt;
+            }
             .report-container { max-width: 800px; margin: 0 auto; }
-            h1 { text-align: center; font-size: 24px; margin: 20px 0; }
+            h1 { text-align: center; font-size: 18pt; margin: 20px 0; }
             .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; page-break-inside: avoid; }
-            .info-table td { padding: 8px; border: 1px solid #aaa; }
-            .info-table td:first-child { width: 30%; background: #f5f5f5; }
+            .info-table td { padding: 8px; border: 1px solid #aaa; font-size: 12pt; }
+            .info-table td:first-child { width: 30%; background: #f5f5f5; font-weight: 600; }
             .item-table { width: 100%; border-collapse: collapse; margin: 20px 0; page-break-inside: avoid; }
-            .item-table th, .item-table td { border: 1px solid #aaa; padding: 8px; text-align: left; }
+            .item-table th, .item-table td { border: 1px solid #aaa; padding: 8px; text-align: left; font-size: 12pt; }
             .item-table th { background: #f5f5f5; text-align: center; }
+            h3 { font-size: 14pt; margin: 15px 0; }
             .sign-area { margin-top: 30px; page-break-inside: avoid; }
             .sign-box { width: 100%; }
             .sign-line { border-bottom: 1px solid #000; min-height: 80px; margin-top: 10px; width: 33%; margin-left: 0; }
             .sign-line img { max-height: 80px; }
-            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #999; }
+            .footer { margin-top: 40px; text-align: center; font-size: 10pt; color: #999; }
             .report-actions { text-align: center; margin: 30px 0 20px; }
-            .report-actions button { background: #007aff; border: none; color: white; padding: 10px 20px; border-radius: 40px; font-size: 1rem; cursor: pointer; margin: 0 10px; }
+            .report-actions button { background: #007aff; border: none; color: white; padding: 10px 20px; border-radius: 40px; font-size: 12pt; cursor: pointer; margin: 0 10px; }
             @media print {
                 .report-actions { display: none; }
             }
@@ -402,7 +408,7 @@
                 <tr><th>Contact Phone</th><td>${extractorPhone}瓣</tr>
                 <tr><th>Signature Date</th><td>${signatureDate}瓣</tr>
                 <tr><th>Checkout Date</th><td>${extractDate}瓣</tr>
-                <td><th>Return Date</th><td>${returnDate}瓣</table>
+                <tr><th>Return Date</th><td>${returnDate}瓣</tr>
                 <tr><th>Prepare By</th><td>${registrarName}瓣</tr>
             </table>
             <h3>📦 Checked Out Items (${todayItems.length})</h3>
@@ -418,7 +424,6 @@
             document.getElementById('printBtn').onclick = () => { window.print(); };
             document.getElementById('emailBtn').onclick = async () => {
                 const element = document.querySelector('.report-container');
-                // 優化的 PDF 參數，避免截斷
                 const opt = {
                     margin: [0.5, 0.5, 0.5, 0.5],
                     filename: 'Equipment_On_Loan_Form.pdf',
