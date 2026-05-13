@@ -107,7 +107,7 @@
         </div>
         <div id="syncStatus" class="sync-status">🔄 Loading inventory from GitHub...</div>
         <div class="flex-row"><input type="text" id="searchLibrary" placeholder="🔍 Search barcode or item name" style="flex:1;"></div>
-        <div style="max-height: 300px; overflow-y: auto;"><table id="libraryTable"><thead><tr><th>Barcode</th><th>Item Name</th><th></th></tr></thead><tbody id="libraryTbody"></tbody></table></div>
+        <div style="max-height: 300px; overflow-y: auto;"><table id="libraryTable"><thead><tr><th>Barcode</th><th>Item Name</th><th></th><tr></thead><tbody id="libraryTbody"></tbody></table></div>
         <div class="pagination" id="paginationControls"></div>
     </div>
 
@@ -353,13 +353,13 @@
         const extractorSigData = (signaturePad && !signaturePad.isEmpty()) ? signaturePad.toDataURL() : "";
         let itemsHtml = "";
         if (todayItems.length === 0) {
-            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>(No records)</td></tr>";
+            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>(No records)瓣</tr>";
         } else {
             todayItems.forEach((item, idx) => {
                 itemsHtml += `<tr>
-                    <td style="text-align:center;">${idx+1}<\/td>
-                    <td>${escapeHtml(item.barcode)}<\/td>
-                    <td>${escapeHtml(item.name)}<\/td>
+                    <td style="text-align:center;">${idx+1}</td>
+                    <td>${escapeHtml(item.barcode)}</td>
+                    <td>${escapeHtml(item.name)}</td>
                 </tr>`;
             });
         }
@@ -394,27 +394,27 @@
         <div class="report-container">
             <h1>📋 Equipment On Loan Form</h1>
             <table class="info-table">
-                <tr><td><strong>Program Name<\/strong><\/td><td>${eventName}<\/td><\/tr>
-                <tr><td><strong>Location<\/strong><\/td><td>${eventLocation}<\/td><\/tr>
-                <tr><td><strong>Usage Date<\/strong><\/td><td>${eventDate}<\/td><\/tr>
-                <tr><td><strong>Borrower Name<\/strong><\/td><td>${extractorName}<\/td><\/tr>
-                <tr><td><strong>Department<\/strong><\/td><td>${extractorDepartment}<\/td><\/tr>
-                <tr><td><strong>Position<\/strong><\/td><td>${extractorPosition}<\/td><\/tr>
-                <tr><td><strong>Contact Phone<\/strong><\/td><td>${extractorPhone}<\/td><\/tr>
-                <tr><td><strong>Signature Date<\/strong><\/td><td>${signatureDate}<\/td><\/tr>
-                <tr><td><strong>Checkout Date<\/strong><\/td><td>${extractDate}<\/td><\/tr>
-                <tr><td><strong>Return Date<\/strong><\/td><td>${returnDate}<\/td><\/tr>
-                <tr><td><strong>Prepare By<\/strong><\/td><td>${registrarName}<\/td><\/tr>
-            <\/table>
-            <h3>📦 Checked Out Items (${todayItems.length})<\/h3>
-            <table class="item-table"><thead><tr><th>#<\/th><th>Barcode<\/th><th>Item Name<\/th><\/tr><\/thead><tbody>${itemsHtml}<\/tbody><\/table>
-            <div class="sign-area"><div class="sign-box"><h3>✍️ Borrower Signature<\/h3><div class="sign-line">${extractorSigData ? `<img src="${extractorSigData}" alt="Signature">` : ""}<\/div><\/div><\/div>
-            <div class="footer">This document is an official checkout voucher, please keep it properly.<\/div>
+                <tr><th>Program Name</th><td>${eventName}</td></tr>
+                <tr><th>Location</th><td>${eventLocation}</td></tr>
+                <tr><th>Usage Date</th><td>${eventDate}</td></tr>
+                <tr><th>Borrower Name</th><td>${extractorName}</td></tr>
+                <tr><th>Department</th><td>${extractorDepartment}</td></tr>
+                <tr><th>Position</th><td>${extractorPosition}</td></tr>
+                <tr><th>Contact Phone</th><td>${extractorPhone}</td></tr>
+                <tr><th>Signature Date</th><td>${signatureDate}</td></tr>
+                <tr><th>Checkout Date</th><td>${extractDate}</td></tr>
+                <tr><th>Return Date</th><td>${returnDate}</td></tr>
+                <tr><th>Prepare By</th><td>${registrarName}</td></tr>
+            </table>
+            <h3>📦 Checked Out Items (${todayItems.length})</h3>
+            <table class="item-table"><thead><tr><th>#</th><th>Barcode</th><th>Item Name</th></tr></thead><tbody>${itemsHtml}</tbody></table>
+            <div class="sign-area"><div class="sign-box"><h3>✍️ Borrower Signature</h3><div class="sign-line">${extractorSigData ? `<img src="${extractorSigData}" alt="Signature">` : ""}</div></div></div>
+            <div class="footer">This document is an official checkout voucher, please keep it properly.</div>
             <div class="report-actions">
-                <button id="printBtn">🖨️ Print / Save as PDF<\/button>
-                <button id="emailBtn">📧 Email PDF to ylee38@lenovo.com<\/button>
-            <\/div>
-        <\/div>
+                <button id="printBtn">🖨️ Print / Save as PDF</button>
+                <button id="emailBtn">📧 Email to RO office</button>
+            </div>
+        </div>
         <script>
             document.getElementById('printBtn').onclick = () => { window.print(); };
             document.getElementById('emailBtn').onclick = async () => {
@@ -422,24 +422,21 @@
                 const opt = { margin: [0.5,0.5,0.5,0.5], filename: 'Equipment_On_Loan_Form.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
                 try {
                     const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
-                    // 下載 PDF
-                    const url = URL.createObjectURL(pdfBlob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'Equipment_On_Loan_Form.pdf';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                    // 開啟郵件客戶端，收件人已填好
-                    window.location.href = "mailto:ylee38@lenovo.com?subject=Equipment%20On%20Loan%20Form&body=Please%20find%20the%20attached%20PDF%20document.";
-                    alert('PDF has been downloaded. Please attach it to the opened email message.');
+                    if (navigator.share) {
+                        await navigator.share({
+                            title: 'Equipment On Loan Form',
+                            text: 'Please find the attached loan form.',
+                            files: [new File([pdfBlob], 'Equipment_On_Loan_Form.pdf', { type: 'application/pdf' })]
+                        });
+                    } else {
+                        alert('Your browser does not support direct sharing. Please use the Print button to save as PDF and then email it.');
+                    }
                 } catch(err) {
                     console.error(err);
-                    alert('Failed to generate PDF: ' + err.message);
+                    alert('Failed to generate PDF or share. ' + err.message);
                 }
             };
-        <\/script>
+        </script>
         </body>
         </html>`;
     }
@@ -452,7 +449,7 @@
         if (!reportWindow) { showToast("❌ Cannot open window, please check if popups are allowed", true); return; }
         reportWindow.document.write(reportHtml);
         reportWindow.document.close();
-        showToast("✅ Report window opened. Use 'Print / Save as PDF' or 'Email PDF' buttons.");
+        showToast("✅ Report window opened. Use 'Print / Save as PDF' or 'Email to RO office' buttons.");
     }
 
     async function confirmAndSave() {
