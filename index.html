@@ -6,7 +6,6 @@
     <title>Equipment On Loan Form</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', 'Noto Sans TC', sans-serif; }
         body { background: #f0f2f5; margin: 0; padding: 16px; padding-bottom: 80px; }
@@ -87,6 +86,12 @@
         .confirm-section { text-align: center; margin-top: 20px; margin-bottom: 20px; }
         .toast-msg { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #34c759; color: white; padding: 12px 24px; border-radius: 40px; font-weight: 500; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         .toast-error { background: #ff3b30; }
+        @media print {
+            body * { visibility: hidden; }
+            .print-area, .print-area * { visibility: visible; }
+            .print-area { position: absolute; top: 0; left: 0; width: 100%; margin: 0; padding: 15px; }
+            .no-print, .no-print * { display: none !important; }
+        }
     </style>
 </head>
 <body>
@@ -105,7 +110,7 @@
         </div>
         <div id="syncStatus" class="sync-status">🔄 Loading inventory from GitHub...</div>
         <div class="flex-row"><input type="text" id="searchLibrary" placeholder="🔍 Search barcode or item name" style="flex:1;"></div>
-        <div style="max-height: 300px; overflow-y: auto;"><table id="libraryTable"><thead><tr><th>Barcode</th><th>Item Name</th><th></th></td></thead><tbody id="libraryTbody"></tbody></td></div>
+        <div style="max-height: 300px; overflow-y: auto;"><table id="libraryTable"><thead><tr><th>Barcode</th><th>Item Name</th><th></th></tr></thead><tbody id="libraryTbody"></tbody></table></div>
         <div class="pagination" id="paginationControls"></div>
     </div>
 
@@ -133,12 +138,12 @@
         <div class="progress-info" id="progressMsg">No items scanned yet</div>
         <div style="max-height: 300px; overflow-y: auto;">
             <table id="todayListTable">
-                <thead></tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th></tr></thead>
+                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th></tr></thead>
                 <tbody id="todayListBody"></tbody>
             </table>
         </div>
         <div class="flex-row">
-            <button id="savePdfBtn">📄 Save as PDF</button>
+            <button id="printReportBtn">🖨️ Print / Save as PDF</button>
             <button id="clearTodayBtn" class="danger">🗑️ Clear Today's List</button>
         </div>
     </div>
@@ -336,7 +341,7 @@
 
     function escapeHtml(str) { if (!str) return ""; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
 
-    function generateReportHTML() {
+    function generatePrintableHTML() {
         const eventName = escapeHtml(eventNameInput.value) || "";
         const eventLocation = escapeHtml(eventLocationInput.value) || "";
         const eventDate = escapeHtml(eventDateInput.value) || "";
@@ -352,14 +357,14 @@
 
         let itemsHtml = "";
         if (todayItems.length === 0) {
-            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>No records瓣</tr>";
+            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>No records</td></tr>";
         } else {
             for (let i = 0; i < todayItems.length; i++) {
                 const item = todayItems[i];
                 itemsHtml += `<tr>
                     <td style="text-align:center; padding:3px 5px;">${i+1}</td>
-                    <td style="padding:3px 5px;">${escapeHtml(item.barcode)}瓣
-                    <td style="padding:3px 5px;">${escapeHtml(item.name)}瓣
+                    <td style="padding:3px 5px;">${escapeHtml(item.barcode)}</td>
+                    <td style="padding:3px 5px;">${escapeHtml(item.name)}</td>
                 </tr>`;
             }
         }
@@ -426,21 +431,21 @@
         <div class="report-container">
             <h1>📋 Equipment On Loan Form</h1>
             <table class="info-table">
-                <tr><th>Program Name</th><td>${eventName}瓣</tr>
-                <tr><th>Location</th><td>${eventLocation}瓣</tr>
-                <tr><th>Usage Date</th><td>${eventDate}瓣</tr>
-                <tr><th>Borrower Name</th><td>${extractorName}瓣</tr>
-                <tr><th>Department</th><td>${extractorDepartment}瓣</tr>
-                <tr><th>Position</th><td>${extractorPosition}瓣</tr>
-                <tr><th>Contact Phone</th><td>${extractorPhone}瓣</tr>
-                <tr><th>Signature Date</th><td>${signatureDate}瓣</tr>
-                <tr><th>Checkout Date</th><td>${extractDate}瓣</tr>
-                <tr><th>Return Date</th><td>${returnDate}瓣</tr>
-                <tr><th>Prepare By</th><td>${registrarName}瓣</tr>
+                <tr><td>Program Name</td><td>${eventName}</td></tr>
+                <tr><td>Location</td><td>${eventLocation}</td></tr>
+                <tr><td>Usage Date</td><td>${eventDate}</td></tr>
+                <tr><td>Borrower Name</td><td>${extractorName}</td></tr>
+                <tr><td>Department</td><td>${extractorDepartment}</td></tr>
+                <tr><td>Position</td><td>${extractorPosition}</td></tr>
+                <tr><td>Contact Phone</td><td>${extractorPhone}</td></tr>
+                <tr><td>Signature Date</td><td>${signatureDate}</td></tr>
+                <tr><td>Checkout Date</td><td>${extractDate}</td></tr>
+                <tr><td>Return Date</td><td>${returnDate}</td></tr>
+                <tr><td>Prepare By</td><td>${registrarName}</td></tr>
             </table>
             <h3>📦 Checked Out Items (${todayItems.length})</h3>
             <table class="item-table">
-                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th></table></thead>
+                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th></tr></thead>
                 <tbody>${itemsHtml}</tbody>
             </table>
             <div class="sign-area"><div class="sign-box"><h3>✍️ Borrower Signature</h3><div class="sign-line">${extractorSigData ? `<img src="${extractorSigData}" alt="Signature">` : ""}</div></div></div>
@@ -449,30 +454,8 @@
         </html>`;
     }
 
-    async function saveAsPDF() {
-        const element = document.createElement('div');
-        element.innerHTML = generateReportHTML();
-        const opt = {
-            margin: [0.5, 0.5, 0.5, 0.5],
-            filename: `Equipment_On_Loan_Form.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, letterRendering: true, useCORS: true, logging: false },
-            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-        };
-        try {
-            await html2pdf().set(opt).from(element).save();
-            showToast("✅ PDF saved successfully");
-        } catch (err) {
-            console.error(err);
-            showToast("❌ Failed to generate PDF: " + err.message, true);
-        }
-    }
-
-    async function confirmAndPrint() {
-        saveEventInfo();
-        saveSignatures();
-        showToast("✅ Data saved, opening print window...");
-        const printContent = generateReportHTML();
+    function printReport() {
+        const printContent = generatePrintableHTML();
         const printWindow = window.open('', '_blank');
         if (!printWindow) {
             showToast("❌ Cannot open print window, please check popup blocker", true);
@@ -485,7 +468,13 @@
         printWindow.onafterprint = () => printWindow.close();
     }
 
-    // 原有的儲存/載入函數
+    async function confirmAndPrint() {
+        saveEventInfo();
+        saveSignatures();
+        showToast("✅ Data saved, opening print window...");
+        printReport();
+    }
+
     function setDefaultDates() {
         const today = new Date().toISOString().split('T')[0];
         if (!eventDateInput.value) eventDateInput.value = today;
@@ -563,10 +552,9 @@
     function loadData() { const storedToday = localStorage.getItem("today_items"); todayItems = storedToday ? JSON.parse(storedToday) : []; renderTodayList(); loadLibraryFromCSV(); loadEventInfo(); setDefaultDates(); }
     function renderTodayList() { todayListBody.innerHTML = ""; updateMaxDisplay(); todayItems.forEach((item, idx) => { const row = todayListBody.insertRow(); row.insertCell(0).innerText = idx+1; row.insertCell(1).innerText = item.barcode; row.insertCell(2).innerText = item.name; const delCell = row.insertCell(3); const delBtn = document.createElement("button"); delBtn.innerText = "❌"; delBtn.className = "delete-btn"; delBtn.onclick = () => { todayItems.splice(idx, 1); saveToday(); }; delCell.appendChild(delBtn); }); }
 
-    // 事件綁定
     document.getElementById("startScannerBtn").onclick = startScanner;
     document.getElementById("stopScannerBtn").onclick = stopScanner;
-    document.getElementById("savePdfBtn").onclick = saveAsPDF;
+    document.getElementById("printReportBtn").onclick = printReport;
     document.getElementById("clearTodayBtn").onclick = () => { if (confirm("Clear all today's records?")) { todayItems = []; saveToday(); } };
     document.getElementById("clearSignatureBtn").onclick = clearSignature;
     document.getElementById("confirmBtn").onclick = confirmAndPrint;
