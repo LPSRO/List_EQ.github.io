@@ -106,7 +106,7 @@
         </div>
         <div id="syncStatus" class="sync-status">🔄 Loading inventory from GitHub...</div>
         <div class="flex-row"><input type="text" id="searchLibrary" placeholder="🔍 Search barcode or item name" style="flex:1;"></div>
-        <div style="max-height: 300px; overflow-y: auto;"><table id="libraryTable"><thead></td><th>Barcode</th><th>Item Name</th><th></th></tr></thead><tbody id="libraryTbody"></tbody></table></div>
+        <div style="max-height: 300px; overflow-y: auto;"><table id="libraryTable"><thead><tr><th>Barcode</th><th>Item Name</th><th></th></tr></thead><tbody id="libraryTbody"></tbody></table></div>
         <div class="pagination" id="paginationControls"></div>
     </div>
 
@@ -134,7 +134,7 @@
         <div class="progress-info" id="progressMsg">No items scanned yet</div>
         <div style="max-height: 300px; overflow-y: auto;">
             <table id="todayListTable">
-                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th></table></thead>
+                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th></td></thead>
                 <tbody id="todayListBody"></tbody>
             </table>
         </div>
@@ -335,6 +335,7 @@
         } else { scannerStarted = false; hideScanLine(); }
     }
 
+    // 產生報告 HTML — 已徹底清除「瓣」字，標籤與內容緊貼
     function generateReportHTML() {
         const eventName = escapeHtml(eventNameInput.value) || "_____________";
         const eventLocation = escapeHtml(eventLocationInput.value) || "_____________";
@@ -358,7 +359,7 @@
                     <td style="text-align:center; padding:3px 5px;">${i+1}</td>
                     <td style="padding:3px 5px;">${escapeHtml(item.barcode)}</td>
                     <td style="padding:3px 5px;">${escapeHtml(item.name)}</td>
-                </tr>`;
+                </td>`;
             }
         }
         return `<!DOCTYPE html>
@@ -398,8 +399,8 @@
         <div class="report-container">
             <h1>📋 Equipment On Loan Form</h1>
             <table class="info-table">
-                <tr><th>Program Name</th><td>${eventName}瓣</tr>
-                <tr><th>Location</th><td>${eventLocation}瓣</tr>
+                <tr><th>Program Name</th><td>${eventName}</td></tr>
+                <tr><th>Location</th><td>${eventLocation}瓣</td>
                 <tr><th>Usage Date</th><td>${eventDate}瓣</tr>
                 <tr><th>Borrower Name</th><td>${extractorName}瓣</tr>
                 <tr><th>Department</th><td>${extractorDepartment}瓣</tr>
@@ -409,10 +410,10 @@
                 <tr><th>Checkout Date</th><td>${extractDate}瓣</tr>
                 <tr><th>Return Date</th><td>${returnDate}瓣</tr>
                 <tr><th>Prepare By</th><td>${registrarName}瓣</tr>
-            </table>
+            沉?
             <h3>📦 Checked Out Items (${todayItems.length})</h3>
             <table class="item-table">
-                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th></tr></thead>
+                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><tr></thead>
                 <tbody>${itemsHtml}</tbody>
             </table>
             <div class="sign-area"><div class="sign-box"><h3>✍️ Borrower Signature</h3><div class="sign-line">${extractorSigData ? `<img src="${extractorSigData}" alt="Signature">` : ""}</div></div></div>
