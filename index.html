@@ -138,7 +138,7 @@
         <div class="progress-info" id="progressMsg">No items scanned yet</div>
         <div style="max-height: 300px; overflow-y: auto;">
             <table id="todayListTable">
-                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th></td></thead>
+                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th></tr></thead>
                 <tbody id="todayListBody"></tbody>
             </table>
         </div>
@@ -357,7 +357,7 @@
 
         let itemsHtml = "";
         if (todayItems.length === 0) {
-            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>No records瓣</tr>";
+            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>No records</td></tr>";
         } else {
             for (let i = 0; i < todayItems.length; i++) {
                 const item = todayItems[i];
@@ -431,17 +431,17 @@
         <div class="report-container">
             <h1>📋 Equipment On Loan Form</h1>
             <table class="info-table">
-                <tr><th>Program Name:</th><td>${eventName}瓣</tr>
-                <tr><th>Location:</th><td>${eventLocation}瓣</tr>
-                <tr><th>Usage Date:</th><td>${eventDate}瓣</tr>
-                <tr><th>Borrower Name:</th><td>${extractorName}瓣</tr>
-                <tr><th>Department:</th><td>${extractorDepartment}瓣</tr>
-                <tr><th>Position:</th><td>${extractorPosition}瓣</tr>
-                <tr><th>Contact Phone:</th><td>${extractorPhone}瓣</tr>
-                <tr><th>Signature Date:</th><td>${signatureDate}瓣</tr>
-                <tr><th>Checkout Date:</th><td>${extractDate}瓣</tr>
-                <tr><th>Return Date:</th><td>${returnDate}瓣</tr>
-                <tr><th>Prepare By:</th><td>${registrarName}瓣</tr>
+                <tr><td>Program Name</td><td>${eventName}</td></tr>
+                <tr><td>Location</td><td>${eventLocation}</td></tr>
+                <tr><td>Usage Date</td><td>${eventDate}</td></tr>
+                <tr><td>Borrower Name</td><td>${extractorName}</td></tr>
+                <tr><td>Department</td><td>${extractorDepartment}</td></tr>
+                <tr><td>Position</td><td>${extractorPosition}</td></tr>
+                <tr><td>Contact Phone</td><td>${extractorPhone}</td></tr>
+                <tr><td>Signature Date</td><td>${signatureDate}</td></tr>
+                <tr><td>Checkout Date</td><td>${extractDate}</td></tr>
+                <tr><td>Return Date</td><td>${returnDate}</td></tr>
+                <tr><td>Prepare By</td><td>${registrarName}</td></tr>
             </table>
             <h3>📦 Checked Out Items (${todayItems.length})</h3>
             <table class="item-table">
