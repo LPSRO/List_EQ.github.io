@@ -106,7 +106,7 @@
         </div>
         <div id="syncStatus" class="sync-status">🔄 Loading inventory from GitHub...</div>
         <div class="flex-row"><input type="text" id="searchLibrary" placeholder="🔍 Search barcode or item name" style="flex:1;"></div>
-        <div style="max-height: 300px; overflow-y: auto;"><table id="libraryTable"><thead><tr><th>Barcode</th><th>Item Name</th><th></th></tr></thead><tbody id="libraryTbody"></tbody></table></div>
+        <div style="max-height: 300px; overflow-y: auto;"><table id="libraryTable"><thead><tr><th>Barcode</th><th>Item Name</th><th></th></td></thead><tbody id="libraryTbody"></tbody></table></div>
         <div class="pagination" id="paginationControls"></div>
     </div>
 
@@ -134,9 +134,9 @@
         <div class="progress-info" id="progressMsg">No items scanned yet</div>
         <div style="max-height: 300px; overflow-y: auto;">
             <table id="todayListTable">
-                <thead></td><th>#</th><th>Barcode</th><th>Item Name</th><th></th></tr></thead>
+                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th></td></thead>
                 <tbody id="todayListBody"></tbody>
-            </table>
+            <table>
         </div>
         <div class="flex-row">
             <button id="savePdfBtn">📄 Save as PDF</button>
@@ -335,34 +335,37 @@
         } else { scannerStarted = false; hideScanLine(); }
     }
 
-    // generateReportHTML - 完全沒有「瓣」字
-    function generateReportHTML() {
-        const eventName = escapeHtml(eventNameInput.value) || "_____________";
-        const eventLocation = escapeHtml(eventLocationInput.value) || "_____________";
-        const eventDate = escapeHtml(eventDateInput.value) || "_____________";
-        const extractorName = escapeHtml(extractorNameInput.value) || "_____________";
-        const extractorDepartment = escapeHtml(extractorDepartmentInput.value) || "_____________";
-        const extractorPosition = escapeHtml(extractorPositionInput.value) || "_____________";
-        const extractorPhone = escapeHtml(extractorPhoneInput.value) || "_____________";
-        const signatureDate = escapeHtml(signatureDateInput.value) || "_____________";
-        const extractDate = escapeHtml(extractDateInput.value) || "_____________";
-        const returnDate = escapeHtml(returnDateInput.value) || "_____________";
-        const registrarName = escapeHtml(registrarNameInput.value) || "_____________";
+    function escapeHtml(str) { if (!str) return ""; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
+
+    async function saveAsPDF() {
+        const eventName = escapeHtml(eventNameInput.value) || "";
+        const eventLocation = escapeHtml(eventLocationInput.value) || "";
+        const eventDate = escapeHtml(eventDateInput.value) || "";
+        const extractorName = escapeHtml(extractorNameInput.value) || "";
+        const extractorDepartment = escapeHtml(extractorDepartmentInput.value) || "";
+        const extractorPosition = escapeHtml(extractorPositionInput.value) || "";
+        const extractorPhone = escapeHtml(extractorPhoneInput.value) || "";
+        const signatureDate = escapeHtml(signatureDateInput.value) || "";
+        const extractDate = escapeHtml(extractDateInput.value) || "";
+        const returnDate = escapeHtml(returnDateInput.value) || "";
+        const registrarName = escapeHtml(registrarNameInput.value) || "";
         const extractorSigData = (signaturePad && !signaturePad.isEmpty()) ? signaturePad.toDataURL() : "";
+
         let itemsHtml = "";
         if (todayItems.length === 0) {
-            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>No records</td></tr>";
+            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>No records瓣</tr>";
         } else {
             for (let i = 0; i < todayItems.length; i++) {
                 const item = todayItems[i];
                 itemsHtml += `<tr>
                     <td style="text-align:center; padding:3px 5px;">${i+1}</td>
-                    <td style="padding:3px 5px;">${escapeHtml(item.barcode)}</td>
-                    <td style="padding:3px 5px;">${escapeHtml(item.name)}</td>
+                    <td style="padding:3px 5px;">${escapeHtml(item.barcode)}瓣
+                    <td style="padding:3px 5px;">${escapeHtml(item.name)}瓣
                 </tr>`;
             }
         }
-        return `<!DOCTYPE html>
+
+        const reportHtml = `<!DOCTYPE html>
         <html>
         <head><meta charset="UTF-8"><title>Equipment On Loan Form</title>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>
@@ -399,18 +402,18 @@
         <div class="report-container">
             <h1>📋 Equipment On Loan Form</h1>
             <table class="info-table">
-                <tr><th>Program Name</th><td>${eventName}</td></tr>
-                <tr><th>Location</th><td>${eventLocation}</td></tr>
-                <tr><th>Usage Date</th><td>${eventDate}</td></tr>
-                <tr><th>Borrower Name</th><td>${extractorName}</td></tr>
-                <tr><th>Department</th><td>${extractorDepartment}</td></tr>
-                <tr><th>Position</th><td>${extractorPosition}</td></tr>
-                <tr><th>Contact Phone</th><td>${extractorPhone}</td></tr>
-                <tr><th>Signature Date</th><td>${signatureDate}</td></td>
-                <tr><th>Checkout Date</th><td>${extractDate}</td></tr>
-                <tr><th>Return Date</th><td>${returnDate}</td></tr>
-                <tr><th>Prepare By</th><td>${registrarName}</td></tr>
-            </table>
+                <tr><th>Program Name</th><td>${eventName}瓣</tr>
+                <tr><th>Location</th><td>${eventLocation}瓣</tr>
+                <tr><th>Usage Date</th><td>${eventDate}瓣</tr>
+                <tr><th>Borrower Name</th><td>${extractorName}瓣</tr>
+                <tr><th>Department</th><td>${extractorDepartment}瓣</tr>
+                <tr><th>Position</th><td>${extractorPosition}瓣</tr>
+                <tr><th>Contact Phone</th><td>${extractorPhone}瓣</tr>
+                <tr><th>Signature Date</th><td>${signatureDate}瓣</tr>
+                <tr><th>Checkout Date</th><td>${extractDate}瓣</tr>
+                <tr><th>Return Date</th><td>${returnDate}瓣</tr>
+                <tr><th>Prepare By</th><td>${registrarName}瓣</tr>
+            </tr>
             <h3>📦 Checked Out Items (${todayItems.length})</h3>
             <table class="item-table">
                 <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th></tr></thead>
@@ -462,12 +465,7 @@
         <\/script>
         </body>
         </html>`;
-    }
 
-    function escapeHtml(str) { if (!str) return ""; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
-
-    async function saveAsPDF() {
-        const reportHtml = generateReportHTML();
         const reportWindow = window.open('', '_blank');
         if (!reportWindow) { showToast("❌ Cannot open window, please check if popups are allowed", true); return; }
         reportWindow.document.write(reportHtml);
