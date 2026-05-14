@@ -7,7 +7,6 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
     <style>
-        /* 主介面樣式 */
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', 'Noto Sans TC', sans-serif; }
         body { background: #f0f2f5; margin: 0; padding: 16px; padding-bottom: 80px; }
         .container { max-width: 700px; margin: 0 auto; }
@@ -87,36 +86,11 @@
         .confirm-section { text-align: center; margin-top: 20px; margin-bottom: 20px; }
         .toast-msg { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #34c759; color: white; padding: 12px 24px; border-radius: 40px; font-weight: 500; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         .toast-error { background: #ff3b30; }
-        /* 列印樣式 (用於 window.print) */
         @media print {
-            body * {
-                visibility: hidden;
-            }
-            .print-area, .print-area * {
-                visibility: visible;
-            }
-            .print-area {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                margin: 0;
-                padding: 15px;
-                font-size: 8pt;
-            }
-            .no-print, .no-print * {
-                display: none !important;
-            }
-            .print-actions {
-                display: none !important;
-            }
-            .info-table td:first-child {
-                width: 1%;
-                white-space: nowrap;
-            }
-            .sign-line {
-                width: 33%;
-            }
+            body * { visibility: hidden; }
+            .print-area, .print-area * { visibility: visible; }
+            .print-area { position: absolute; top: 0; left: 0; width: 100%; margin: 0; padding: 15px; font-size: 8pt; }
+            .no-print, .no-print * { display: none !important; }
         }
     </style>
 </head>
@@ -136,7 +110,7 @@
         </div>
         <div id="syncStatus" class="sync-status">🔄 Loading inventory from GitHub...</div>
         <div class="flex-row"><input type="text" id="searchLibrary" placeholder="🔍 Search barcode or item name" style="flex:1;"></div>
-        <div style="max-height: 300px; overflow-y: auto;"><table id="libraryTable"><thead><tr><th>Barcode</th><th>Item Name</th><th></th></tr></thead><tbody id="libraryTbody"></tbody></table></div>
+        <div style="max-height: 300px; overflow-y: auto;"><table id="libraryTable"><thead><tr><th>Barcode</th><th>Item Name</th><th></th></td></thead><tbody id="libraryTbody"></tbody></table></div>
         <div class="pagination" id="paginationControls"></div>
     </div>
 
@@ -192,9 +166,6 @@
     </div>
 </div>
 
-<!-- 隱藏的列印區域（動態填充內容） -->
-<div id="printArea" style="display: none;"></div>
-
 <script>
     const MAX_ITEMS = 100;
     const SCAN_COOLDOWN_MS = 2000;
@@ -211,7 +182,7 @@
     let scannerStarted = false;
     let signaturePad = null;
 
-    // DOM 元素
+    // DOM elements
     const librarySection = document.getElementById("librarySection");
     const toggleLibraryBtn = document.getElementById("toggleLibraryBtn");
     const libraryTbody = document.getElementById("libraryTbody");
@@ -369,7 +340,8 @@
         } else { scannerStarted = false; hideScanLine(); }
     }
 
-    // 生成可列印的報表 HTML (乾淨無額外字符)
+    function escapeHtml(str) { if (!str) return ""; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
+
     function generatePrintableHTML() {
         const eventName = escapeHtml(eventNameInput.value) || "";
         const eventLocation = escapeHtml(eventLocationInput.value) || "";
@@ -386,14 +358,14 @@
 
         let itemsHtml = "";
         if (todayItems.length === 0) {
-            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>No records</td></tr>";
+            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>No records瓣</tr>";
         } else {
             for (let i = 0; i < todayItems.length; i++) {
                 const item = todayItems[i];
                 itemsHtml += `<tr>
                     <td style="text-align:center; padding:3px 5px;">${i+1}</td>
-                    <td style="padding:3px 5px;">${escapeHtml(item.barcode)}</td>
-                    <td style="padding:3px 5px;">${escapeHtml(item.name)}</td>
+                    <td style="padding:3px 5px;">${escapeHtml(item.barcode)}瓣
+                    <td style="padding:3px 5px;">${escapeHtml(item.name)}瓣
                 </tr>`;
             }
         }
@@ -429,17 +401,17 @@
         <div class="report-container">
             <h1>📋 Equipment On Loan Form</h1>
             <table class="info-table">
-                <tr><th>Program Name</th><td>${eventName}</td></tr>
-                <tr><th>Location</th><td>${eventLocation}</td></tr>
-                <tr><th>Usage Date</th><td>${eventDate}</td></tr>
-                <tr><th>Borrower Name</th><td>${extractorName}</td></tr>
-                <tr><th>Department</th><td>${extractorDepartment}</td></tr>
-                <tr><th>Position</th><td>${extractorPosition}</td></tr>
-                <tr><th>Contact Phone</th><td>${extractorPhone}</td></tr>
-                <tr><th>Signature Date</th><td>${signatureDate}</td></tr>
-                <tr><th>Checkout Date</th><td>${extractDate}</td></tr>
-                <tr><th>Return Date</th><td>${returnDate}</td></tr>
-                <tr><th>Prepare By</th><td>${registrarName}</td></tr>
+                <tr><th>Program Name</th><td>${eventName}瓣</tr>
+                <tr><th>Location</th><td>${eventLocation}瓣</tr>
+                <tr><th>Usage Date</th><td>${eventDate}瓣</tr>
+                <tr><th>Borrower Name</th><td>${extractorName}瓣</tr>
+                <tr><th>Department</th><td>${extractorDepartment}瓣</tr>
+                <tr><th>Position</th><td>${extractorPosition}瓣</tr>
+                <tr><th>Contact Phone</th><td>${extractorPhone}瓣</tr>
+                <tr><th>Signature Date</th><td>${signatureDate}瓣</tr>
+                <tr><th>Checkout Date</th><td>${extractDate}瓣</tr>
+                <tr><th>Return Date</th><td>${returnDate}瓣</tr>
+                <tr><th>Prepare By</th><td>${registrarName}瓣</tr>
             </table>
             <h3>📦 Checked Out Items (${todayItems.length})</h3>
             <table class="item-table">
@@ -453,9 +425,6 @@
         </html>`;
     }
 
-    function escapeHtml(str) { if (!str) return ""; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
-
-    // 使用 window.print 列印/儲存 PDF
     function printReport() {
         const printContent = generatePrintableHTML();
         const printWindow = window.open('', '_blank');
@@ -467,11 +436,9 @@
         printWindow.document.close();
         printWindow.focus();
         printWindow.print();
-        // 列印後可選關閉視窗
         printWindow.onafterprint = () => printWindow.close();
     }
 
-    // 確認儲存 + 開啟列印視窗
     async function confirmAndPrint() {
         saveEventInfo();
         saveSignatures();
@@ -479,7 +446,6 @@
         printReport();
     }
 
-    // 原有的儲存/載入函數 (保持不變)
     function setDefaultDates() {
         const today = new Date().toISOString().split('T')[0];
         if (!eventDateInput.value) eventDateInput.value = today;
@@ -557,7 +523,6 @@
     function loadData() { const storedToday = localStorage.getItem("today_items"); todayItems = storedToday ? JSON.parse(storedToday) : []; renderTodayList(); loadLibraryFromCSV(); loadEventInfo(); setDefaultDates(); }
     function renderTodayList() { todayListBody.innerHTML = ""; updateMaxDisplay(); todayItems.forEach((item, idx) => { const row = todayListBody.insertRow(); row.insertCell(0).innerText = idx+1; row.insertCell(1).innerText = item.barcode; row.insertCell(2).innerText = item.name; const delCell = row.insertCell(3); const delBtn = document.createElement("button"); delBtn.innerText = "❌"; delBtn.className = "delete-btn"; delBtn.onclick = () => { todayItems.splice(idx, 1); saveToday(); }; delCell.appendChild(delBtn); }); }
 
-    // 事件綁定
     document.getElementById("startScannerBtn").onclick = startScanner;
     document.getElementById("stopScannerBtn").onclick = stopScanner;
     document.getElementById("printReportBtn").onclick = printReport;
