@@ -7,7 +7,6 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
     <style>
-        /* 主介面樣式保持不變 */
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', 'Noto Sans TC', sans-serif; }
         body { background: #f0f2f5; margin: 0; padding: 16px; padding-bottom: 80px; }
         .container { max-width: 700px; margin: 0 auto; }
@@ -107,7 +106,7 @@
         </div>
         <div id="syncStatus" class="sync-status">🔄 Loading inventory from GitHub...</div>
         <div class="flex-row"><input type="text" id="searchLibrary" placeholder="🔍 Search barcode or item name" style="flex:1;"></div>
-        <div style="max-height: 300px; overflow-y: auto;"><table id="libraryTable"><thead><tr><th>Barcode</th><th>Item Name</th><th></th></tr></thead><tbody id="libraryTbody"></tbody></table></div>
+        <div style="max-height: 300px; overflow-y: auto;"><table id="libraryTable"><thead><tr><th>Barcode</th><th>Item Name</th><th></th></td></thead><tbody id="libraryTbody"></tbody></table></div>
         <div class="pagination" id="paginationControls"></div>
     </div>
 
@@ -135,9 +134,9 @@
         <div class="progress-info" id="progressMsg">No items scanned yet</div>
         <div style="max-height: 300px; overflow-y: auto;">
             <table id="todayListTable">
-                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th></tr></thead>
+                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th></td></thead>
                 <tbody id="todayListBody"></tbody>
-            </table>
+            <table>
         </div>
         <div class="flex-row">
             <button id="savePdfBtn">📄 Save as PDF</button>
@@ -179,7 +178,6 @@
     let scannerStarted = false;
     let signaturePad = null;
 
-    // --- DOM element selections ---
     const librarySection = document.getElementById("librarySection");
     const toggleLibraryBtn = document.getElementById("toggleLibraryBtn");
     const libraryTbody = document.getElementById("libraryTbody");
@@ -207,7 +205,6 @@
     const returnDateInput = document.getElementById("returnDate");
     const registrarNameInput = document.getElementById("registrarName");
 
-    // --- UI helper functions ---
     let isLibraryVisible = false;
     function toggleLibraryVisibility() {
         isLibraryVisible = !isLibraryVisible;
@@ -230,6 +227,7 @@
             toggleLibraryBtn.style.background = "#007aff";
         }
     }
+
     function showCameraSuccessMessage() {
         const overlay = successOverlay;
         if (!overlay) return;
@@ -240,8 +238,10 @@
         overlay.appendChild(messageDiv);
         setTimeout(() => { if (messageDiv.parentNode) messageDiv.parentNode.removeChild(messageDiv); }, SUCCESS_DISPLAY_MS);
     }
+
     function showScanLine() { if (scanLine) scanLine.style.display = "block"; }
     function hideScanLine() { if (scanLine) scanLine.style.display = "none"; }
+
     function showToast(message, isError = false) {
         const toast = document.createElement("div");
         toast.className = "toast-msg";
@@ -251,7 +251,6 @@
         setTimeout(() => toast.remove(), 3000);
     }
 
-    // --- Core functions (scan, add item, save, etc.) ---
     async function addItemByBarcode(barcode, source = "scan") {
         if (isInCooldown) { showToast("Please wait, cooldown...", true); return false; }
         if (todayItems.length >= MAX_ITEMS) { alert(`Daily limit of ${MAX_ITEMS} items reached`); return false; }
@@ -275,6 +274,7 @@
         await startCooldown();
         return true;
     }
+
     manualAddBtn.onclick = async () => {
         const barcode = manualBarcodeInput.value.trim();
         if (!barcode) { alert("Please enter barcode number"); return; }
@@ -282,6 +282,7 @@
         manualBarcodeInput.value = "";
         manualBarcodeInput.focus();
     };
+
     async function startCooldown() {
         isInCooldown = true;
         const statusP = document.getElementById("scanStatus");
@@ -291,6 +292,7 @@
         isInCooldown = false;
         if (scannerStarted) statusP.innerText = originalText;
     }
+
     async function onScanSuccess(decodedText) {
         if (!scannerStarted || isInCooldown) return;
         const now = Date.now();
@@ -298,6 +300,7 @@
         lastScanTime = now;
         await addItemByBarcode(decodedText, "scan");
     }
+
     function startScanner() {
         if (scannerStarted) return;
         html5QrCode = new Html5Qrcode("reader");
@@ -325,116 +328,39 @@
             }, 1000);
         }).catch(err => { alert("Cannot open camera, please confirm camera permission"); scannerStarted = false; hideScanLine(); });
     }
+
     function stopScanner() {
         if (html5QrCode && scannerStarted) {
             html5QrCode.stop().then(() => { scannerStarted = false; document.getElementById("scanStatus").innerText = "⏹️ Camera stopped"; hideScanLine(); }).catch(()=>{});
         } else { scannerStarted = false; hideScanLine(); }
     }
 
-    // --- Data persistence helpers ---
-    function setDefaultDates() {
-        const today = new Date().toISOString().split('T')[0];
-        if (!eventDateInput.value) eventDateInput.value = today;
-        if (!signatureDateInput.value) signatureDateInput.value = today;
-        if (!extractDateInput.value) extractDateInput.value = today;
-        if (!returnDateInput.value) returnDateInput.value = today;
-    }
-    function loadEventInfo() {
-        eventNameInput.value = localStorage.getItem("event_name") || "";
-        eventLocationInput.value = localStorage.getItem("event_location") || "";
-        eventDateInput.value = localStorage.getItem("event_date") || "";
-        extractorNameInput.value = localStorage.getItem("extractor_name") || "";
-        extractorDepartmentInput.value = localStorage.getItem("extractor_department") || "";
-        extractorPositionInput.value = localStorage.getItem("extractor_position") || "";
-        extractorPhoneInput.value = localStorage.getItem("extractor_phone") || "";
-        signatureDateInput.value = localStorage.getItem("signature_date") || "";
-        extractDateInput.value = localStorage.getItem("extract_date") || "";
-        returnDateInput.value = localStorage.getItem("return_date") || "";
-        registrarNameInput.value = localStorage.getItem("registrar_name") || "";
-    }
-    function saveEventInfo() {
-        localStorage.setItem("event_name", eventNameInput.value);
-        localStorage.setItem("event_location", eventLocationInput.value);
-        localStorage.setItem("event_date", eventDateInput.value);
-        localStorage.setItem("extractor_name", extractorNameInput.value);
-        localStorage.setItem("extractor_department", extractorDepartmentInput.value);
-        localStorage.setItem("extractor_position", extractorPositionInput.value);
-        localStorage.setItem("extractor_phone", extractorPhoneInput.value);
-        localStorage.setItem("signature_date", signatureDateInput.value);
-        localStorage.setItem("extract_date", extractDateInput.value);
-        localStorage.setItem("return_date", returnDateInput.value);
-        localStorage.setItem("registrar_name", registrarNameInput.value);
-    }
-    function initSignaturePads() {
-        const extractorCanvas = document.getElementById("signatureCanvas");
-        extractorCanvas.width = extractorCanvas.clientWidth || 600;
-        extractorCanvas.height = extractorCanvas.clientHeight || 150;
-        signaturePad = new SignaturePad(extractorCanvas, { backgroundColor: 'white', penColor: 'black', velocityFilterWeight: 0.7, minWidth: 1, maxWidth: 3 });
-        const savedExtractorSig = localStorage.getItem("signature_data");
-        if (savedExtractorSig) signaturePad.fromDataURL(savedExtractorSig);
-    }
-    function saveSignatures() { if (signaturePad && !signaturePad.isEmpty()) localStorage.setItem("signature_data", signaturePad.toDataURL()); else localStorage.removeItem("signature_data"); }
-    function clearSignature() { if (signaturePad) signaturePad.clear(); localStorage.removeItem("signature_data"); }
-    async function loadLibraryFromCSV() {
-        syncStatusDiv.innerHTML = "🔄 Loading inventory from GitHub...";
-        try {
-            const response = await fetch("items.csv?" + new Date().getTime());
-            if (!response.ok) throw new Error("Cannot load items.csv");
-            const csvText = await response.text();
-            const lines = csvText.split(/\r?\n/);
-            let count = 0;
-            const newLibrary = {};
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (line === "") continue;
-                if (i === 0 && (line.toLowerCase().includes("barcode") || line.toLowerCase().includes("名稱"))) continue;
-                let parts = line.split(",");
-                if (parts.length < 2) continue;
-                let barcode = parts[0].replace(/^"|"$/g, '').trim();
-                let name = parts[1].replace(/^"|"$/g, '').trim();
-                if (barcode && name) newLibrary[barcode] = name, count++;
-            }
-            library = newLibrary;
-            syncStatusDiv.innerHTML = `✅ Loaded ${count} items from GitHub`;
-            renderLibraryTable();
-        } catch (error) { syncStatusDiv.innerHTML = "⚠️ Cannot load items.csv"; library = {}; renderLibraryTable(); }
-    }
-    function getFilteredLibraryArray() { let items = Object.entries(library).map(([barcode, name]) => ({ barcode, name })); if (currentSearchTerm.trim()) { const term = currentSearchTerm.trim().toLowerCase(); items = items.filter(item => item.barcode.toLowerCase().includes(term) || item.name.toLowerCase().includes(term)); } return items; }
-    function renderLibraryTable() { const filtered = getFilteredLibraryArray(); totalCountBadge.innerText = filtered.length; const totalPages = Math.ceil(filtered.length / PAGE_SIZE); if (currentPage > totalPages) currentPage = Math.max(1, totalPages); const start = (currentPage - 1) * PAGE_SIZE; const pageItems = filtered.slice(start, start + PAGE_SIZE); libraryTbody.innerHTML = ""; for (const item of pageItems) { const row = libraryTbody.insertRow(); row.insertCell(0).innerText = item.barcode; row.insertCell(1).innerText = item.name; const delCell = row.insertCell(2); const delBtn = document.createElement("button"); delBtn.innerText = "Delete"; delBtn.className = "delete-btn"; delBtn.onclick = () => { delete library[item.barcode]; renderLibraryTable(); }; delCell.appendChild(delBtn); } renderPagination(totalPages); }
-    function renderPagination(totalPages) { paginationDiv.innerHTML = ""; if (totalPages <= 1) return; const prevBtn = document.createElement("button"); prevBtn.innerText = "◀ Prev"; prevBtn.className = "page-btn"; prevBtn.disabled = (currentPage === 1); prevBtn.onclick = () => { if (currentPage > 1) { currentPage--; renderLibraryTable(); } }; paginationDiv.appendChild(prevBtn); let startPage = Math.max(1, currentPage - 2); let endPage = Math.min(totalPages, startPage + 4); for (let i = startPage; i <= endPage; i++) { const pageBtn = document.createElement("button"); pageBtn.innerText = i; pageBtn.className = "page-btn"; if (i === currentPage) pageBtn.classList.add("active"); pageBtn.onclick = () => { currentPage = i; renderLibraryTable(); }; paginationDiv.appendChild(pageBtn); } const nextBtn = document.createElement("button"); nextBtn.innerText = "Next ▶"; nextBtn.className = "page-btn"; nextBtn.disabled = (currentPage === totalPages); nextBtn.onclick = () => { if (currentPage < totalPages) { currentPage++; renderLibraryTable(); } }; paginationDiv.appendChild(nextBtn); }
-    function updateMaxDisplay() { countDisplay.innerText = `${todayItems.length} / ${MAX_ITEMS}`; progressMsg.innerText = todayItems.length >= MAX_ITEMS ? `Daily limit of ${MAX_ITEMS} items reached` : `Checked out ${todayItems.length}, remaining ${MAX_ITEMS - todayItems.length}`; }
-    function saveToday() { localStorage.setItem("today_items", JSON.stringify(todayItems)); renderTodayList(); }
-    function loadData() { const storedToday = localStorage.getItem("today_items"); todayItems = storedToday ? JSON.parse(storedToday) : []; renderTodayList(); loadLibraryFromCSV(); loadEventInfo(); setDefaultDates(); }
-    function renderTodayList() { todayListBody.innerHTML = ""; updateMaxDisplay(); todayItems.forEach((item, idx) => { const row = todayListBody.insertRow(); row.insertCell(0).innerText = idx+1; row.insertCell(1).innerText = item.barcode; row.insertCell(2).innerText = item.name; const delCell = row.insertCell(3); const delBtn = document.createElement("button"); delBtn.innerText = "❌"; delBtn.className = "delete-btn"; delBtn.onclick = () => { todayItems.splice(idx, 1); saveToday(); }; delCell.appendChild(delBtn); }); }
-
-    // --- PDF Generation (CLEAN VERSION - NO EXTRA CHARACTERS) ---
     function escapeHtml(str) { if (!str) return ""; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
 
     async function saveAsPDF() {
-        // Prepare data
-        const eventName = escapeHtml(eventNameInput.value);
-        const eventLocation = escapeHtml(eventLocationInput.value);
-        const eventDate = escapeHtml(eventDateInput.value);
-        const extractorName = escapeHtml(extractorNameInput.value);
-        const extractorDepartment = escapeHtml(extractorDepartmentInput.value);
-        const extractorPosition = escapeHtml(extractorPositionInput.value);
-        const extractorPhone = escapeHtml(extractorPhoneInput.value);
-        const signatureDate = escapeHtml(signatureDateInput.value);
-        const extractDate = escapeHtml(extractDateInput.value);
-        const returnDate = escapeHtml(returnDateInput.value);
-        const registrarName = escapeHtml(registrarNameInput.value);
+        const eventName = escapeHtml(eventNameInput.value) || "";
+        const eventLocation = escapeHtml(eventLocationInput.value) || "";
+        const eventDate = escapeHtml(eventDateInput.value) || "";
+        const extractorName = escapeHtml(extractorNameInput.value) || "";
+        const extractorDepartment = escapeHtml(extractorDepartmentInput.value) || "";
+        const extractorPosition = escapeHtml(extractorPositionInput.value) || "";
+        const extractorPhone = escapeHtml(extractorPhoneInput.value) || "";
+        const signatureDate = escapeHtml(signatureDateInput.value) || "";
+        const extractDate = escapeHtml(extractDateInput.value) || "";
+        const returnDate = escapeHtml(returnDateInput.value) || "";
+        const registrarName = escapeHtml(registrarNameInput.value) || "";
         const extractorSigData = (signaturePad && !signaturePad.isEmpty()) ? signaturePad.toDataURL() : "";
 
         let itemsHtml = "";
         if (todayItems.length === 0) {
-            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>No records</td></tr>";
+            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>No records瓣</tr>";
         } else {
             for (let i = 0; i < todayItems.length; i++) {
                 const item = todayItems[i];
                 itemsHtml += `<tr>
                     <td style="text-align:center; padding:3px 5px;">${i+1}</td>
-                    <td style="padding:3px 5px;">${escapeHtml(item.barcode)}</td>
-                    <td style="padding:3px 5px;">${escapeHtml(item.name)}</td>
+                    <td style="padding:3px 5px;">${escapeHtml(item.barcode)}瓣
+                    <td style="padding:3px 5px;">${escapeHtml(item.name)}瓣
                 </tr>`;
             }
         }
@@ -476,8 +402,8 @@
         <div class="report-container">
             <h1>📋 Equipment On Loan Form</h1>
             <table class="info-table">
-                <tr><th>Program Name</th><td>${eventName}</td></tr>
-                <tr><th>Location</th><td>${eventLocation}瓣</td>
+                <tr><th>Program Name</th><td>${eventName}瓣</tr>
+                <tr><th>Location</th><td>${eventLocation}瓣</tr>
                 <tr><th>Usage Date</th><td>${eventDate}瓣</tr>
                 <tr><th>Borrower Name</th><td>${extractorName}瓣</tr>
                 <tr><th>Department</th><td>${extractorDepartment}瓣</tr>
@@ -487,7 +413,7 @@
                 <tr><th>Checkout Date</th><td>${extractDate}瓣</tr>
                 <tr><th>Return Date</th><td>${returnDate}瓣</tr>
                 <tr><th>Prepare By</th><td>${registrarName}瓣</tr>
-            </table>
+            </tr>
             <h3>📦 Checked Out Items (${todayItems.length})</h3>
             <table class="item-table">
                 <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th></tr></thead>
@@ -554,7 +480,83 @@
         saveAsPDF();
     }
 
-    // --- Event listeners ---
+    function setDefaultDates() {
+        const today = new Date().toISOString().split('T')[0];
+        if (!eventDateInput.value) eventDateInput.value = today;
+        if (!signatureDateInput.value) signatureDateInput.value = today;
+        if (!extractDateInput.value) extractDateInput.value = today;
+        if (!returnDateInput.value) returnDateInput.value = today;
+    }
+    function loadEventInfo() {
+        eventNameInput.value = localStorage.getItem("event_name") || "";
+        eventLocationInput.value = localStorage.getItem("event_location") || "";
+        eventDateInput.value = localStorage.getItem("event_date") || "";
+        extractorNameInput.value = localStorage.getItem("extractor_name") || "";
+        extractorDepartmentInput.value = localStorage.getItem("extractor_department") || "";
+        extractorPositionInput.value = localStorage.getItem("extractor_position") || "";
+        extractorPhoneInput.value = localStorage.getItem("extractor_phone") || "";
+        signatureDateInput.value = localStorage.getItem("signature_date") || "";
+        extractDateInput.value = localStorage.getItem("extract_date") || "";
+        returnDateInput.value = localStorage.getItem("return_date") || "";
+        registrarNameInput.value = localStorage.getItem("registrar_name") || "";
+    }
+    function saveEventInfo() {
+        localStorage.setItem("event_name", eventNameInput.value);
+        localStorage.setItem("event_location", eventLocationInput.value);
+        localStorage.setItem("event_date", eventDateInput.value);
+        localStorage.setItem("extractor_name", extractorNameInput.value);
+        localStorage.setItem("extractor_department", extractorDepartmentInput.value);
+        localStorage.setItem("extractor_position", extractorPositionInput.value);
+        localStorage.setItem("extractor_phone", extractorPhoneInput.value);
+        localStorage.setItem("signature_date", signatureDateInput.value);
+        localStorage.setItem("extract_date", extractDateInput.value);
+        localStorage.setItem("return_date", returnDateInput.value);
+        localStorage.setItem("registrar_name", registrarNameInput.value);
+    }
+    function initSignaturePads() {
+        const extractorCanvas = document.getElementById("signatureCanvas");
+        extractorCanvas.width = extractorCanvas.clientWidth || 600;
+        extractorCanvas.height = extractorCanvas.clientHeight || 150;
+        signaturePad = new SignaturePad(extractorCanvas, { backgroundColor: 'white', penColor: 'black', velocityFilterWeight: 0.7, minWidth: 1, maxWidth: 3 });
+        const savedExtractorSig = localStorage.getItem("signature_data");
+        if (savedExtractorSig) signaturePad.fromDataURL(savedExtractorSig);
+    }
+    function saveSignatures() { if (signaturePad && !signaturePad.isEmpty()) localStorage.setItem("signature_data", signaturePad.toDataURL()); else localStorage.removeItem("signature_data"); }
+    function clearSignature() { if (signaturePad) signaturePad.clear(); localStorage.removeItem("signature_data"); }
+
+    async function loadLibraryFromCSV() {
+        syncStatusDiv.innerHTML = "🔄 Loading inventory from GitHub...";
+        try {
+            const response = await fetch("items.csv?" + new Date().getTime());
+            if (!response.ok) throw new Error("Cannot load items.csv");
+            const csvText = await response.text();
+            const lines = csvText.split(/\r?\n/);
+            let count = 0;
+            const newLibrary = {};
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line === "") continue;
+                if (i === 0 && (line.toLowerCase().includes("barcode") || line.toLowerCase().includes("名稱"))) continue;
+                let parts = line.split(",");
+                if (parts.length < 2) continue;
+                let barcode = parts[0].replace(/^"|"$/g, '').trim();
+                let name = parts[1].replace(/^"|"$/g, '').trim();
+                if (barcode && name) newLibrary[barcode] = name, count++;
+            }
+            library = newLibrary;
+            syncStatusDiv.innerHTML = `✅ Loaded ${count} items from GitHub`;
+            renderLibraryTable();
+        } catch (error) { syncStatusDiv.innerHTML = "⚠️ Cannot load items.csv"; library = {}; renderLibraryTable(); }
+    }
+
+    function getFilteredLibraryArray() { let items = Object.entries(library).map(([barcode, name]) => ({ barcode, name })); if (currentSearchTerm.trim()) { const term = currentSearchTerm.trim().toLowerCase(); items = items.filter(item => item.barcode.toLowerCase().includes(term) || item.name.toLowerCase().includes(term)); } return items; }
+    function renderLibraryTable() { const filtered = getFilteredLibraryArray(); totalCountBadge.innerText = filtered.length; const totalPages = Math.ceil(filtered.length / PAGE_SIZE); if (currentPage > totalPages) currentPage = Math.max(1, totalPages); const start = (currentPage - 1) * PAGE_SIZE; const pageItems = filtered.slice(start, start + PAGE_SIZE); libraryTbody.innerHTML = ""; for (const item of pageItems) { const row = libraryTbody.insertRow(); row.insertCell(0).innerText = item.barcode; row.insertCell(1).innerText = item.name; const delCell = row.insertCell(2); const delBtn = document.createElement("button"); delBtn.innerText = "Delete"; delBtn.className = "delete-btn"; delBtn.onclick = () => { delete library[item.barcode]; renderLibraryTable(); }; delCell.appendChild(delBtn); } renderPagination(totalPages); }
+    function renderPagination(totalPages) { paginationDiv.innerHTML = ""; if (totalPages <= 1) return; const prevBtn = document.createElement("button"); prevBtn.innerText = "◀ Prev"; prevBtn.className = "page-btn"; prevBtn.disabled = (currentPage === 1); prevBtn.onclick = () => { if (currentPage > 1) { currentPage--; renderLibraryTable(); } }; paginationDiv.appendChild(prevBtn); let startPage = Math.max(1, currentPage - 2); let endPage = Math.min(totalPages, startPage + 4); for (let i = startPage; i <= endPage; i++) { const pageBtn = document.createElement("button"); pageBtn.innerText = i; pageBtn.className = "page-btn"; if (i === currentPage) pageBtn.classList.add("active"); pageBtn.onclick = () => { currentPage = i; renderLibraryTable(); }; paginationDiv.appendChild(pageBtn); } const nextBtn = document.createElement("button"); nextBtn.innerText = "Next ▶"; nextBtn.className = "page-btn"; nextBtn.disabled = (currentPage === totalPages); nextBtn.onclick = () => { if (currentPage < totalPages) { currentPage++; renderLibraryTable(); } }; paginationDiv.appendChild(nextBtn); }
+    function updateMaxDisplay() { countDisplay.innerText = `${todayItems.length} / ${MAX_ITEMS}`; progressMsg.innerText = todayItems.length >= MAX_ITEMS ? `Daily limit of ${MAX_ITEMS} items reached` : `Checked out ${todayItems.length}, remaining ${MAX_ITEMS - todayItems.length}`; }
+    function saveToday() { localStorage.setItem("today_items", JSON.stringify(todayItems)); renderTodayList(); }
+    function loadData() { const storedToday = localStorage.getItem("today_items"); todayItems = storedToday ? JSON.parse(storedToday) : []; renderTodayList(); loadLibraryFromCSV(); loadEventInfo(); setDefaultDates(); }
+    function renderTodayList() { todayListBody.innerHTML = ""; updateMaxDisplay(); todayItems.forEach((item, idx) => { const row = todayListBody.insertRow(); row.insertCell(0).innerText = idx+1; row.insertCell(1).innerText = item.barcode; row.insertCell(2).innerText = item.name; const delCell = row.insertCell(3); const delBtn = document.createElement("button"); delBtn.innerText = "❌"; delBtn.className = "delete-btn"; delBtn.onclick = () => { todayItems.splice(idx, 1); saveToday(); }; delCell.appendChild(delBtn); }); }
+
     document.getElementById("startScannerBtn").onclick = startScanner;
     document.getElementById("stopScannerBtn").onclick = stopScanner;
     document.getElementById("savePdfBtn").onclick = saveAsPDF;
@@ -568,7 +570,6 @@
     extractorPhoneInput.onchange = saveEventInfo; signatureDateInput.onchange = saveEventInfo;
     extractDateInput.onchange = saveEventInfo; returnDateInput.onchange = saveEventInfo; registrarNameInput.onchange = saveEventInfo;
 
-    // --- Initialization ---
     loadData();
     loadLibraryVisibility();
     initSignaturePads();
