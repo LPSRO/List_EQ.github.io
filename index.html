@@ -7,7 +7,7 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
     <style>
-        /* 主介面樣式保持不變 */
+        /* 主介面樣式 */
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', 'Noto Sans TC', sans-serif; }
         body { background: #f0f2f5; margin: 0; padding: 16px; padding-bottom: 80px; }
         .container { max-width: 700px; margin: 0 auto; }
@@ -87,8 +87,37 @@
         .confirm-section { text-align: center; margin-top: 20px; margin-bottom: 20px; }
         .toast-msg { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #34c759; color: white; padding: 12px 24px; border-radius: 40px; font-weight: 500; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         .toast-error { background: #ff3b30; }
-        .report-actions { text-align: center; margin: 20px 0; }
-        .report-actions button { margin: 0 10px; padding: 8px 16px; }
+        /* 列印樣式 (用於 window.print) */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .print-area, .print-area * {
+                visibility: visible;
+            }
+            .print-area {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                margin: 0;
+                padding: 15px;
+                font-size: 8pt;
+            }
+            .no-print, .no-print * {
+                display: none !important;
+            }
+            .print-actions {
+                display: none !important;
+            }
+            .info-table td:first-child {
+                width: 1%;
+                white-space: nowrap;
+            }
+            .sign-line {
+                width: 33%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -107,7 +136,7 @@
         </div>
         <div id="syncStatus" class="sync-status">🔄 Loading inventory from GitHub...</div>
         <div class="flex-row"><input type="text" id="searchLibrary" placeholder="🔍 Search barcode or item name" style="flex:1;"></div>
-        <div style="max-height: 300px; overflow-y: auto;"><table id="libraryTable"><thead><tr><th>Barcode</th><th>Item Name</th><th></th></td></thead><tbody id="libraryTbody"></tbody></table></div>
+        <div style="max-height: 300px; overflow-y: auto;"><table id="libraryTable"><thead><tr><th>Barcode</th><th>Item Name</th><th></th></tr></thead><tbody id="libraryTbody"></tbody></table></div>
         <div class="pagination" id="paginationControls"></div>
     </div>
 
@@ -135,12 +164,12 @@
         <div class="progress-info" id="progressMsg">No items scanned yet</div>
         <div style="max-height: 300px; overflow-y: auto;">
             <table id="todayListTable">
-                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th><tr></thead>
+                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th></tr></thead>
                 <tbody id="todayListBody"></tbody>
             </table>
         </div>
         <div class="flex-row">
-            <button id="savePdfBtn">📄 Save as PDF</button>
+            <button id="printReportBtn">🖨️ Print / Save as PDF</button>
             <button id="clearTodayBtn" class="danger">🗑️ Clear Today's List</button>
         </div>
     </div>
@@ -159,9 +188,12 @@
     </div>
 
     <div class="card confirm-section no-print">
-        <button id="confirmBtn" class="confirm-btn">✅ Confirm & Save (Generate Report)</button>
+        <button id="confirmBtn" class="confirm-btn">✅ Confirm & Save (Open Print)</button>
     </div>
 </div>
+
+<!-- 隱藏的列印區域（動態填充內容） -->
+<div id="printArea" style="display: none;"></div>
 
 <script>
     const MAX_ITEMS = 100;
@@ -179,6 +211,7 @@
     let scannerStarted = false;
     let signaturePad = null;
 
+    // DOM 元素
     const librarySection = document.getElementById("librarySection");
     const toggleLibraryBtn = document.getElementById("toggleLibraryBtn");
     const libraryTbody = document.getElementById("libraryTbody");
@@ -336,9 +369,8 @@
         } else { scannerStarted = false; hideScanLine(); }
     }
 
-    function escapeHtml(str) { if (!str) return ""; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
-
-    async function saveAsPDF() {
+    // 生成可列印的報表 HTML (乾淨無額外字符)
+    function generatePrintableHTML() {
         const eventName = escapeHtml(eventNameInput.value) || "";
         const eventLocation = escapeHtml(eventLocationInput.value) || "";
         const eventDate = escapeHtml(eventDateInput.value) || "";
@@ -358,18 +390,17 @@
         } else {
             for (let i = 0; i < todayItems.length; i++) {
                 const item = todayItems[i];
-                itemsHtml += "<tr>"
-                    + "<td style='text-align:center; padding:3px 5px;'>" + (i+1) + "</td>"
-                    + "<td style='padding:3px 5px;'>" + escapeHtml(item.barcode) + "</td>"
-                    + "<td style='padding:3px 5px;'>" + escapeHtml(item.name) + "</td>"
-                    + "</tr>";
+                itemsHtml += `<tr>
+                    <td style="text-align:center; padding:3px 5px;">${i+1}</td>
+                    <td style="padding:3px 5px;">${escapeHtml(item.barcode)}</td>
+                    <td style="padding:3px 5px;">${escapeHtml(item.name)}</td>
+                </tr>`;
             }
         }
 
-        const reportHtml = `<!DOCTYPE html>
+        return `<!DOCTYPE html>
         <html>
         <head><meta charset="UTF-8"><title>Equipment On Loan Form</title>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { 
@@ -380,23 +411,18 @@
             }
             .report-container { max-width: 800px; margin: 0 auto; }
             h1 { text-align: center; font-size: 13pt; margin: 8px 0; }
-            .info-table { border-collapse: collapse; margin: 8px 0; page-break-inside: avoid; }
+            .info-table { border-collapse: collapse; margin: 8px 0; width: 100%; }
             .info-table td { padding: 3px 6px; border: 1px solid #aaa; font-size: 8pt; }
             .info-table td:first-child { width: 1%; white-space: nowrap; background: #f5f5f5; font-weight: 600; }
-            .item-table { width: 100%; border-collapse: collapse; margin: 8px 0; page-break-inside: avoid; }
+            .item-table { width: 100%; border-collapse: collapse; margin: 8px 0; }
             .item-table th, .item-table td { border: 1px solid #aaa; padding: 3px 5px; text-align: left; font-size: 7.5pt; }
             .item-table th { background: #f5f5f5; text-align: center; }
             h3 { font-size: 10pt; margin: 8px 0 4px; }
-            .sign-area { margin-top: 15px; page-break-inside: avoid; }
+            .sign-area { margin-top: 15px; }
             .sign-box { width: 100%; }
             .sign-line { border-bottom: 1px solid #000; min-height: 50px; margin-top: 6px; width: 33%; margin-left: 0; }
             .sign-line img { max-height: 50px; }
             .footer { margin-top: 15px; text-align: center; font-size: 7pt; color: #999; }
-            .report-actions { text-align: center; margin: 15px 0; }
-            .report-actions button { background: #007aff; border: none; color: white; padding: 5px 10px; border-radius: 25px; font-size: 9pt; cursor: pointer; margin: 0 6px; }
-            @media print {
-                .report-actions { display: none; }
-            }
         </style>
         </head>
         <body>
@@ -414,73 +440,46 @@
                 <tr><th>Checkout Date</th><td>${extractDate}</td></tr>
                 <tr><th>Return Date</th><td>${returnDate}</td></tr>
                 <tr><th>Prepare By</th><td>${registrarName}</td></tr>
-            沉?
+            </table>
             <h3>📦 Checked Out Items (${todayItems.length})</h3>
             <table class="item-table">
-                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><tr></thead>
+                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th></tr></thead>
                 <tbody>${itemsHtml}</tbody>
             </table>
             <div class="sign-area"><div class="sign-box"><h3>✍️ Borrower Signature</h3><div class="sign-line">${extractorSigData ? `<img src="${extractorSigData}" alt="Signature">` : ""}</div></div></div>
             <div class="footer">This document is an official checkout voucher, please keep it properly.</div>
-            <div class="report-actions">
-                <button id="printBtn">🖨️ Print / Save as PDF</button>
-                <button id="shareBtn">📧 Share PDF</button>
-            </div>
         </div>
-        <script>
-            document.getElementById('printBtn').onclick = () => { window.print(); };
-            document.getElementById('shareBtn').onclick = async () => {
-                const element = document.querySelector('.report-container');
-                const opt = {
-                    margin: [0.5, 0.5, 0.5, 0.5],
-                    filename: 'Equipment_On_Loan_Form.pdf',
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, letterRendering: true, useCORS: true, logging: false },
-                    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
-                    pagebreak: { mode: 'css', avoid: 'tr,td,.sign-box' }
-                };
-                try {
-                    const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
-                    if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([pdfBlob], 'Equipment_On_Loan_Form.pdf', { type: 'application/pdf' })] })) {
-                        await navigator.share({
-                            title: 'Equipment On Loan Form',
-                            text: 'Please find the attached loan form.',
-                            files: [new File([pdfBlob], 'Equipment_On_Loan_Form.pdf', { type: 'application/pdf' })]
-                        });
-                    } else {
-                        const url = URL.createObjectURL(pdfBlob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'Equipment_On_Loan_Form.pdf';
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                        alert('Your browser does not support sharing files. The PDF has been downloaded.');
-                    }
-                } catch(err) {
-                    console.error(err);
-                    alert('Failed to generate or share PDF. ' + err.message);
-                }
-            };
-        <\/script>
         </body>
         </html>`;
-
-        const reportWindow = window.open('', '_blank');
-        if (!reportWindow) { showToast("❌ Cannot open window, please check if popups are allowed", true); return; }
-        reportWindow.document.write(reportHtml);
-        reportWindow.document.close();
-        showToast("✅ Report window opened. Use 'Print / Save as PDF' or 'Share PDF' buttons.");
     }
 
-    async function confirmAndSave() {
+    function escapeHtml(str) { if (!str) return ""; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
+
+    // 使用 window.print 列印/儲存 PDF
+    function printReport() {
+        const printContent = generatePrintableHTML();
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            showToast("❌ Cannot open print window, please check popup blocker", true);
+            return;
+        }
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+        // 列印後可選關閉視窗
+        printWindow.onafterprint = () => printWindow.close();
+    }
+
+    // 確認儲存 + 開啟列印視窗
+    async function confirmAndPrint() {
         saveEventInfo();
         saveSignatures();
-        showToast("✅ Data saved, opening report...");
-        saveAsPDF();
+        showToast("✅ Data saved, opening print window...");
+        printReport();
     }
 
+    // 原有的儲存/載入函數 (保持不變)
     function setDefaultDates() {
         const today = new Date().toISOString().split('T')[0];
         if (!eventDateInput.value) eventDateInput.value = today;
@@ -558,12 +557,13 @@
     function loadData() { const storedToday = localStorage.getItem("today_items"); todayItems = storedToday ? JSON.parse(storedToday) : []; renderTodayList(); loadLibraryFromCSV(); loadEventInfo(); setDefaultDates(); }
     function renderTodayList() { todayListBody.innerHTML = ""; updateMaxDisplay(); todayItems.forEach((item, idx) => { const row = todayListBody.insertRow(); row.insertCell(0).innerText = idx+1; row.insertCell(1).innerText = item.barcode; row.insertCell(2).innerText = item.name; const delCell = row.insertCell(3); const delBtn = document.createElement("button"); delBtn.innerText = "❌"; delBtn.className = "delete-btn"; delBtn.onclick = () => { todayItems.splice(idx, 1); saveToday(); }; delCell.appendChild(delBtn); }); }
 
+    // 事件綁定
     document.getElementById("startScannerBtn").onclick = startScanner;
     document.getElementById("stopScannerBtn").onclick = stopScanner;
-    document.getElementById("savePdfBtn").onclick = saveAsPDF;
+    document.getElementById("printReportBtn").onclick = printReport;
     document.getElementById("clearTodayBtn").onclick = () => { if (confirm("Clear all today's records?")) { todayItems = []; saveToday(); } };
     document.getElementById("clearSignatureBtn").onclick = clearSignature;
-    document.getElementById("confirmBtn").onclick = confirmAndSave;
+    document.getElementById("confirmBtn").onclick = confirmAndPrint;
     toggleLibraryBtn.onclick = toggleLibraryVisibility;
     searchInput.oninput = (e) => { currentSearchTerm = e.target.value; currentPage = 1; renderLibraryTable(); };
     eventNameInput.onchange = saveEventInfo; eventLocationInput.onchange = saveEventInfo; eventDateInput.onchange = saveEventInfo;
