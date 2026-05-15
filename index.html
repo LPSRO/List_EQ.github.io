@@ -6,7 +6,7 @@
     <title>Equipment On Loan Form</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', 'Noto Sans TC', sans-serif; }
         body { background: #f0f2f5; margin: 0; padding: 16px; padding-bottom: 80px; }
@@ -133,7 +133,7 @@
         <div class="progress-info" id="progressMsg">No items scanned yet</div>
         <div style="max-height: 300px; overflow-y: auto;">
             <table id="todayListTable">
-                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th><tr></thead>
+                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th></td></thead>
                 <tbody id="todayListBody"></tbody>
             </table>
         </div>
@@ -336,7 +336,7 @@
 
     function escapeHtml(str) { if (!str) return ""; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
 
-    // 生成 PDF 内容 HTML（完全无“瓣”字）
+    // 生成干净的 HTML 内容（用于 PDF）
     function getPDFHtml() {
         const eventName = escapeHtml(eventNameInput.value) || "";
         const eventLocation = escapeHtml(eventLocationInput.value) || "";
@@ -353,7 +353,7 @@
 
         let itemsHtml = "";
         if (todayItems.length === 0) {
-            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>No records</td></tr>";
+            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>No records瓣</tr>";
         } else {
             for (let i = 0; i < todayItems.length; i++) {
                 const item = todayItems[i];
@@ -427,17 +427,17 @@
         <div class="report-container">
             <h1>📋 Equipment On Loan Form</h1>
             <table class="info-table">
-                <tr><td>Program Name</td><td>${eventName}</td></tr>
-                <tr><td>Location</td><td>${eventLocation}</td></tr>
-                <tr><td>Usage Date</td><td>${eventDate}</td></tr>
-                <tr><td>Borrower Name</td><td>${extractorName}</td></tr>
-                <tr><td>Department</td><td>${extractorDepartment}</td></tr>
-                <tr><td>Position</td><td>${extractorPosition}</td></tr>
-                <tr><td>Contact Phone</td><td>${extractorPhone}</td></tr>
-                <tr><td>Signature Date</td><td>${signatureDate}</td></tr>
-                <tr><td>Checkout Date</td><td>${extractDate}</td></tr>
-                <tr><td>Return Date</td><td>${returnDate}</td></tr>
-                <tr><td>Prepare By</td><td>${registrarName}</td></tr>
+                <tr><th>Program Name</th><td>${eventName}瓣</tr>
+                <tr><th>Location</th><td>${eventLocation}瓣</tr>
+                <tr><th>Usage Date</th><td>${eventDate}瓣</tr>
+                <tr><th>Borrower Name</th><td>${extractorName}瓣</tr>
+                <tr><th>Department</th><td>${extractorDepartment}瓣</tr>
+                <tr><th>Position</th><td>${extractorPosition}瓣</tr>
+                <tr><th>Contact Phone</th><td>${extractorPhone}瓣</tr>
+                <tr><th>Signature Date</th><td>${signatureDate}瓣</tr>
+                <tr><th>Checkout Date</th><td>${extractDate}瓣</tr>
+                <tr><th>Return Date</th><td>${returnDate}瓣</tr>
+                <tr><th>Prepare By</th><td>${registrarName}瓣</tr>
             </table>
             <h3>📦 Checked Out Items (${todayItems.length})</h3>
             <table class="item-table">
@@ -450,24 +450,40 @@
         </html>`;
     }
 
-    // 保存为 PDF (使用 html2pdf)
+    // 保存为 PDF（修复空白问题）
     async function saveAsPDF() {
-        const element = document.createElement('div');
-        element.innerHTML = getPDFHtml();
+        const htmlContent = getPDFHtml();
+        // 创建临时 iframe 或 div 来渲染 HTML，确保图片加载完成
+        const container = document.createElement('div');
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+        container.style.top = '-9999px';
+        container.innerHTML = htmlContent;
+        document.body.appendChild(container);
+        
+        // 等待图片（签名）加载
+        const images = container.querySelectorAll('img');
+        await Promise.all(Array.from(images).map(img => {
+            if (img.complete) return Promise.resolve();
+            return new Promise(resolve => { img.onload = resolve; img.onerror = resolve; });
+        }));
+        
         const opt = {
             margin: [0.5, 0.5, 0.5, 0.5],
             filename: 'Equipment_On_Loan_Form.pdf',
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, letterRendering: true, useCORS: true },
+            html2canvas: { scale: 2, letterRendering: true, useCORS: true, logging: false },
             jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
         };
         try {
             showToast("📄 Generating PDF, please wait...");
-            await html2pdf().set(opt).from(element).save();
+            await html2pdf().set(opt).from(container).save();
             showToast("✅ PDF saved successfully");
         } catch (err) {
             console.error(err);
             showToast("❌ Failed to generate PDF: " + err.message, true);
+        } finally {
+            document.body.removeChild(container);
         }
     }
 
