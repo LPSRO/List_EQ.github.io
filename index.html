@@ -6,7 +6,7 @@
     <title>Equipment On Loan Form</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', 'Noto Sans TC', sans-serif; }
         body { background: #f0f2f5; margin: 0; padding: 16px; padding-bottom: 80px; }
@@ -87,6 +87,7 @@
         .confirm-section { text-align: center; margin-top: 20px; margin-bottom: 20px; }
         .toast-msg { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #34c759; color: white; padding: 12px 24px; border-radius: 40px; font-weight: 500; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         .toast-error { background: #ff3b30; }
+        #pdfContent { position: fixed; top: -9999px; left: -9999px; visibility: hidden; }
     </style>
 </head>
 <body>
@@ -105,7 +106,7 @@
         </div>
         <div id="syncStatus" class="sync-status">🔄 Loading inventory from GitHub...</div>
         <div class="flex-row"><input type="text" id="searchLibrary" placeholder="🔍 Search barcode or item name" style="flex:1;"></div>
-        <div style="max-height: 300px; overflow-y: auto;"><table id="libraryTable"><thead><tr><th>Barcode</th><th>Item Name</th><th></th></td></thead><tbody id="libraryTbody"></tbody></table></div>
+        <div style="max-height: 300px; overflow-y: auto;"><table id="libraryTable"><thead><tr><th>Barcode</th><th>Item Name</th><th></th></tr></thead><tbody id="libraryTbody"></tbody></table></div>
         <div class="pagination" id="paginationControls"></div>
     </div>
 
@@ -133,7 +134,7 @@
         <div class="progress-info" id="progressMsg">No items scanned yet</div>
         <div style="max-height: 300px; overflow-y: auto;">
             <table id="todayListTable">
-                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th></tr></thead>
+                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th></td></thead>
                 <tbody id="todayListBody"></tbody>
             </table>
         </div>
@@ -160,6 +161,9 @@
         <button id="confirmBtn" class="confirm-btn">✅ Confirm & Save (Save PDF)</button>
     </div>
 </div>
+
+<!-- 隱藏的 PDF 內容容器 -->
+<div id="pdfContent" style="position: fixed; top: -9999px; left: -9999px; visibility: hidden;"></div>
 
 <script>
     const MAX_ITEMS = 100;
@@ -336,7 +340,7 @@
 
     function escapeHtml(str) { if (!str) return ""; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
 
-    async function saveAsPDF() {
+    function buildPdfContent() {
         const eventName = escapeHtml(eventNameInput.value) || "";
         const eventLocation = escapeHtml(eventLocationInput.value) || "";
         const eventDate = escapeHtml(eventDateInput.value) || "";
@@ -360,11 +364,11 @@
                     <td style="text-align:center; padding:3px 5px;">${i+1}</td>
                     <td style="padding:3px 5px;">${escapeHtml(item.barcode)}</td>
                     <td style="padding:3px 5px;">${escapeHtml(item.name)}</td>
-                </tr>`;
+                <tr>`;
             }
         }
 
-        const reportHtml = `<!DOCTYPE html>
+        return `<!DOCTYPE html>
         <html>
         <head><meta charset="UTF-8"><title>Equipment On Loan Form</title>
         <style>
@@ -398,27 +402,30 @@
                 <tr><th>Location</th><td>${eventLocation}瓣</tr>
                 <tr><th>Usage Date</th><td>${eventDate}瓣</tr>
                 <tr><th>Borrower Name</th><td>${extractorName}瓣</tr>
-                <tr><th>Department</th><td>${extractorDepartment}瓣</tr>
+                <td><th>Department</th><td>${extractorDepartment}瓣</tr>
                 <tr><th>Position</th><td>${extractorPosition}瓣</tr>
                 <tr><th>Contact Phone</th><td>${extractorPhone}瓣</tr>
-                <tr><th>Signature Date</th><td>${signatureDate}瓣</td>
+                <td><th>Signature Date</th><td>${signatureDate}瓣</tr>
                 <tr><th>Checkout Date</th><td>${extractDate}瓣</tr>
                 <tr><th>Return Date</th><td>${returnDate}瓣</tr>
-                <tr><th>Prepare By</th><td>${registrarName}瓣</td>
+                <tr><th>Prepare By</th><td>${registrarName}瓣</tr>
             </table>
             <h3>📦 Checked Out Items (${todayItems.length})</h3>
             <table class="item-table">
-                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><tr></thead>
+                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th></tr></thead>
                 <tbody>${itemsHtml}</tbody>
             </table>
             <div class="sign-area"><div class="sign-box"><h3>✍️ Borrower Signature</h3><div class="sign-line">${extractorSigData ? `<img src="${extractorSigData}" alt="Signature">` : ""}</div></div></div>
         </div>
         </body>
         </html>`;
+    }
 
-        // 使用 html2pdf 生成并下载 PDF
-        const element = document.createElement('div');
-        element.innerHTML = reportHtml;
+    async function saveAsPDF() {
+        const pdfContentHtml = buildPdfContent();
+        const pdfContainer = document.getElementById("pdfContent");
+        pdfContainer.innerHTML = pdfContentHtml;
+        
         const opt = {
             margin: [0.5, 0.5, 0.5, 0.5],
             filename: `Equipment_On_Loan_Form.pdf`,
@@ -428,11 +435,13 @@
             pagebreak: { mode: 'css', avoid: 'tr,td,.sign-box' }
         };
         try {
-            await html2pdf().set(opt).from(element).save();
+            await html2pdf().set(opt).from(pdfContainer).save();
             showToast("✅ PDF saved successfully");
         } catch (err) {
             console.error(err);
             showToast("❌ Failed to generate PDF: " + err.message, true);
+        } finally {
+            pdfContainer.innerHTML = "";
         }
     }
 
