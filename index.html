@@ -86,32 +86,14 @@
         .confirm-section { text-align: center; margin-top: 20px; margin-bottom: 20px; }
         .toast-msg { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #34c759; color: white; padding: 12px 24px; border-radius: 40px; font-weight: 500; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         .toast-error { background: #ff3b30; }
-        /* 列印样式 (用于保存 PDF) */
+        /* 打印样式 */
         @media print {
-            body * {
-                visibility: hidden;
-            }
-            .print-area, .print-area * {
-                visibility: visible;
-            }
-            .print-area {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                margin: 0;
-                padding: 15px;
-            }
-            .no-print, .no-print * {
-                display: none !important;
-            }
-            .info-table td:first-child {
-                width: 1%;
-                white-space: nowrap;
-            }
-            .sign-line {
-                width: 33%;
-            }
+            body * { visibility: hidden; }
+            .print-area, .print-area * { visibility: visible; }
+            .print-area { position: absolute; top: 0; left: 0; width: 100%; margin: 0; padding: 15px; }
+            .no-print, .no-print * { display: none !important; }
+            .info-table td:first-child { width: 1%; white-space: nowrap; }
+            .sign-line { width: 33%; }
         }
     </style>
 </head>
@@ -159,7 +141,7 @@
         <div class="progress-info" id="progressMsg">No items scanned yet</div>
         <div style="max-height: 300px; overflow-y: auto;">
             <table id="todayListTable">
-                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th></tr></thead>
+                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th></td></thead>
                 <tbody id="todayListBody"></tbody>
             </table>
         </div>
@@ -186,9 +168,6 @@
         <button id="confirmBtn" class="confirm-btn">✅ Confirm & Save (Generate PDF)</button>
     </div>
 </div>
-
-<!-- 隐藏的打印区域，用于保存 PDF 时显示 -->
-<div id="printArea" style="display: none;"></div>
 
 <script>
     const MAX_ITEMS = 100;
@@ -365,7 +344,7 @@
 
     function escapeHtml(str) { if (!str) return ""; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
 
-    // 生成可打印的 HTML 内容（与之前相同）
+    // 生成可打印的HTML（彻底清除瓣字）
     function getPrintableHTML() {
         const eventName = escapeHtml(eventNameInput.value) || "";
         const eventLocation = escapeHtml(eventLocationInput.value) || "";
@@ -382,15 +361,15 @@
 
         let itemsHtml = "";
         if (todayItems.length === 0) {
-            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>No records瓣</tr>";
+            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>No records</td></tr>";
         } else {
             for (let i = 0; i < todayItems.length; i++) {
                 const item = todayItems[i];
                 itemsHtml += `<tr>
                     <td style="text-align:center; padding:3px 5px;">${i+1}</td>
-                    <td style="padding:3px 5px;">${escapeHtml(item.barcode)}瓣
-                    <td style="padding:3px 5px;">${escapeHtml(item.name)}瓣
-                <tr>`;
+                    <td style="padding:3px 5px;">${escapeHtml(item.barcode)}</td>
+                    <td style="padding:3px 5px;">${escapeHtml(item.name)}</td>
+                </tr>`;
             }
         }
 
@@ -456,17 +435,17 @@
         <div class="report-container">
             <h1>📋 Equipment On Loan Form</h1>
             <table class="info-table">
-                <tr><th>Program Name</th><td>${eventName}瓣</tr>
-                <tr><th>Location</th><td>${eventLocation}瓣</tr>
-                <tr><th>Usage Date</th><td>${eventDate}瓣</tr>
-                <tr><th>Borrower Name</th><td>${extractorName}瓣</tr>
-                </tr><th>Department</th><td>${extractorDepartment}瓣</tr>
-                <tr><th>Position</th><td>${extractorPosition}瓣</tr>
-                <tr><th>Contact Phone</th><td>${extractorPhone}瓣</tr>
-                <tr><th>Signature Date</th><td>${signatureDate}瓣</tr>
-                <tr><th>Checkout Date</th><td>${extractDate}瓣</tr>
-                <tr><th>Return Date</th><td>${returnDate}瓣</tr>
-                <tr><th>Prepare By</th><td>${registrarName}瓣</tr>
+                <tr><th>Program Name</th><td>${eventName}</td></tr>
+                <tr><th>Location</th><td>${eventLocation}</td></tr>
+                <tr><th>Usage Date</th><td>${eventDate}</td></tr>
+                <tr><th>Borrower Name</th><td>${extractorName}</td></tr>
+                <tr><th>Department</th><td>${extractorDepartment}</td></tr>
+                <tr><th>Position</th><td>${extractorPosition}</td></tr>
+                <tr><th>Contact Phone</th><td>${extractorPhone}</td></tr>
+                <tr><th>Signature Date</th><td>${signatureDate}</td></tr>
+                <tr><th>Checkout Date</th><td>${extractDate}</td></tr>
+                <tr><th>Return Date</th><td>${returnDate}</td></tr>
+                <tr><th>Prepare By</th><td>${registrarName}</td></tr>
             </table>
             <h3>📦 Checked Out Items (${todayItems.length})</h3>
             <table class="item-table">
@@ -484,21 +463,20 @@
         const printContent = getPrintableHTML();
         const printWindow = window.open('', '_blank');
         if (!printWindow) {
-            showToast("❌ 无法打开打印窗口，请检查是否允许弹出窗口", true);
+            showToast("❌ Cannot open print window, please check popup blocker", true);
             return;
         }
         printWindow.document.write(printContent);
         printWindow.document.close();
         printWindow.focus();
         printWindow.print();
-        // 打印完成后关闭窗口
         printWindow.onafterprint = () => printWindow.close();
     }
 
     async function confirmAndSave() {
         saveEventInfo();
         saveSignatures();
-        showToast("✅ 数据已保存，正在打开打印窗口...");
+        showToast("✅ Data saved, opening print window...");
         printPDF();
     }
 
