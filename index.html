@@ -2,8 +2,8 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Equipment On Loan Form</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Equipment On Loan Form - Fixed Version</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -13,27 +13,26 @@
         body { background: #f0f2f5; margin: 0; padding: 16px; padding-bottom: 80px; color: #1c1c1e; }
         .container { max-width: 700px; margin: 0 auto; }
         .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        h2 { font-size: 1.4rem; margin-top: 0; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+        h2 { font-size: 1.3rem; margin-top: 0; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
         .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 0.95rem; }
+        label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 0.9rem; }
         input { padding: 12px; border-radius: 10px; border: 1px solid #ddd; width: 100%; font-size: 1rem; }
         
-        button { background: #007aff; border: none; color: white; padding: 12px 20px; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+        button { background: #007aff; border: none; color: white; padding: 12px 20px; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        button:active { opacity: 0.7; transform: scale(0.98); }
         button.secondary { background: #8e8e93; }
         button.danger { background: #ff3b30; }
-        button.confirm-btn { background: #34c759; width: 100%; font-size: 1.2rem; margin-top: 10px; }
+        button.confirm-btn { background: #34c759; width: 100%; font-size: 1.2rem; }
 
         #reader { width: 100%; border-radius: 15px; overflow: hidden; background: #000; position: relative; }
-        .scan-line { position: absolute; top: 50%; left: 10%; width: 80%; height: 2px; background: #ffcc00; z-index: 10; pointer-events: none; }
-
+        
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { text-align: left; padding: 12px 8px; border-bottom: 1px solid #eee; }
         
-        .signature-area { border: 2px dashed #ccc; border-radius: 12px; background: #fff; margin-top: 10px; }
-        canvas { width: 100%; height: 150px; touch-action: none; cursor: crosshair; }
+        .signature-area { border: 2px dashed #bbb; border-radius: 12px; background: #fff; margin-top: 10px; overflow: hidden; }
+        canvas { width: 100%; height: 180px; touch-action: none; background: #fff; }
 
         .toast-msg { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 12px 24px; border-radius: 50px; z-index: 9999; }
-        .no-print { display: block; }
     </style>
 </head>
 <body>
@@ -41,171 +40,214 @@
 <div class="container">
     <div class="card">
         <h2>📋 基本資訊</h2>
-        <div class="form-group"><label>活動名稱</label><input type="text" id="eventName" placeholder="例如：Program A"></div>
-        <div class="form-group"><label>地點</label><input type="text" id="eventLocation" placeholder="例如：HKC"></div>
+        <div class="form-group"><label>活動名稱</label><input type="text" id="eventName" value="Program A"></div>
         <div class="form-group"><label>日期</label><input type="date" id="eventDate"></div>
     </div>
 
-    <div class="card no-print">
-        <h2>📷 條碼掃描</h2>
+    <div class="card">
+        <h2>📷 條碼輸入 / 掃描</h2>
         <div id="reader"></div>
         <div style="display: flex; gap: 10px; margin-top: 15px;">
-            <button id="startScannerBtn">開啟相機</button>
-            <button id="stopScannerBtn" class="secondary">關閉相機</button>
+            <button id="startScan">開啟相機</button>
+            <button id="stopScan" class="secondary">關閉</button>
         </div>
-        <div class="form-group" style="margin-top: 20px;">
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+        <div class="form-group">
             <label>手動輸入條碼</label>
             <div style="display: flex; gap: 8px;">
-                <input type="text" id="manualBarcode">
+                <input type="text" id="manualInput" placeholder="請輸入編號">
                 <button id="manualAddBtn">加入</button>
             </div>
         </div>
     </div>
 
     <div class="card">
-        <h2>📦 設備清單 (<span id="countDisplay">0</span>)</h2>
+        <h2>📦 借用清單 (<span id="count">0</span>)</h2>
         <table>
-            <thead><tr><th>#</th><th>條碼</th><th>名稱</th><th class="no-print">操作</th></tr></thead>
+            <thead><tr><th>#</th><th>條碼</th><th>名稱</th><th>操作</th></tr></thead>
             <tbody id="listBody"></tbody>
         </table>
     </div>
 
     <div class="card">
-        <h2>✍️ 借用人確認</h2>
-        <div class="form-group"><label>借用人姓名</label><input type="text" id="borrowerName"></div>
-        <div class="form-group"><label>聯絡電話</label><input type="tel" id="borrowerPhone"></div>
-        <div class="form-group">
-            <label>簽名</label>
-            <div class="signature-area"><canvas id="sigCanvas"></canvas></div>
-            <button id="clearSigBtn" class="secondary" style="margin-top: 8px;">清除簽名</button>
+        <h2>✍️ 借用人簽署</h2>
+        <div class="form-group"><label>借用人姓名</label><input type="text" id="borrower" placeholder="姓名"></div>
+        <div class="signature-area">
+            <canvas id="sig-canvas"></canvas>
+        </div>
+        <div style="margin-top: 10px; display: flex; gap: 10px;">
+            <button id="clearSig" class="secondary">清除簽名</button>
         </div>
     </div>
 
-    <button id="savePdfBtn" class="confirm-btn">✅ 確認並生成 PDF</button>
+    <button id="downloadPdf" class="confirm-btn">✅ 確認並生成 PDF</button>
 </div>
 
 <script>
     let todayItems = [];
     let sigPad;
     let scanner;
-    let library = {};
 
+    // 1. 初始化功能
     window.onload = () => {
+        // 設定日期預設值
+        document.getElementById('eventDate').value = new Date().toISOString().split('T')[0];
+
         // 初始化簽名板
-        const canvas = document.getElementById('sigCanvas');
-        sigPad = new SignaturePad(canvas, { backgroundColor: 'rgb(255, 255, 255)' });
-        
-        // 自動調整畫布大小
+        const canvas = document.getElementById('sig-canvas');
+        sigPad = new SignaturePad(canvas, {
+            backgroundColor: 'rgb(255, 255, 255)',
+            penColor: 'rgb(0, 0, 0)'
+        });
+
+        // 解決 Canvas 縮放導致無法簽名的問題
         const resizeCanvas = () => {
             const ratio = Math.max(window.devicePixelRatio || 1, 1);
             canvas.width = canvas.offsetWidth * ratio;
             canvas.height = canvas.offsetHeight * ratio;
             canvas.getContext("2d").scale(ratio, ratio);
-            sigPad.clear();
+            sigPad.clear(); // 調整大小後必須清除一次
         };
-        window.onresize = resizeCanvas;
+        window.addEventListener("resize", resizeCanvas);
         resizeCanvas();
 
-        // 設定預設日期
-        document.getElementById('eventDate').value = new Date().toISOString().split('T')[0];
-        
-        // 載入庫存
-        fetchLibrary();
+        // 綁定按鈕事件
+        document.getElementById('manualAddBtn').onclick = handleManualAdd;
+        document.getElementById('startScan').onclick = startScanner;
+        document.getElementById('stopScan').onclick = stopScanner;
+        document.getElementById('clearSig').onclick = () => sigPad.clear();
+        document.getElementById('downloadPdf').onclick = generatePDF;
     };
 
-    async function fetchLibrary() {
-        try {
-            const res = await fetch('items.csv');
-            const text = await res.text();
-            text.split('\n').forEach(line => {
-                const [code, name] = line.split(',');
-                if (code && name) library[code.trim()] = name.trim();
-            });
-        } catch (e) { console.log("等待手動輸入或 CSV 載入"); }
+    // 2. 處理手動輸入
+    function handleManualAdd() {
+        const input = document.getElementById('manualInput');
+        const code = input.value.trim();
+        if (code) {
+            addItem(code);
+            input.value = '';
+            input.focus();
+        } else {
+            alert("請輸入條碼");
+        }
     }
 
+    // 3. 加入清單邏輯
     function addItem(code) {
-        if (!code) return;
-        if (todayItems.some(i => i.barcode === code)) return alert("重複掃描");
-        let name = library[code] || prompt("新設備！請輸入名稱：", "未知設備");
-        if (!name) return;
-        todayItems.push({ barcode: code, name: name });
-        updateList();
+        if (todayItems.some(i => i.barcode === code)) {
+            alert("條碼已存在");
+            return;
+        }
+        // 這裡可以預設一個庫存名稱或讓使用者輸入
+        const name = prompt("輸入設備名稱：", "設備 " + code);
+        if (name) {
+            todayItems.push({ barcode: code, name: name });
+            renderList();
+            showToast("已加入: " + code);
+        }
     }
 
-    function updateList() {
+    function renderList() {
         const body = document.getElementById('listBody');
         body.innerHTML = '';
-        todayItems.forEach((item, idx) => {
-            body.innerHTML += `<tr><td>${idx+1}</td><td>${item.barcode}</td><td>${item.name}</td>
-            <td class="no-print"><button class="danger" onclick="removeItem(${idx})">刪除</button></td></tr>`;
+        todayItems.forEach((item, index) => {
+            body.innerHTML += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${item.barcode}</td>
+                    <td>${item.name}</td>
+                    <td><button class="danger" style="padding:5px 10px;" onclick="removeItem(${index})">刪除</button></td>
+                </tr>`;
         });
-        document.getElementById('countDisplay').innerText = todayItems.length;
+        document.getElementById('count').innerText = todayItems.length;
     }
 
-    window.removeItem = (idx) => { todayItems.splice(idx, 1); updateList(); };
-
-    document.getElementById('manualAddBtn').onclick = () => {
-        const input = document.getElementById('manualBarcode');
-        addItem(input.value);
-        input.value = '';
+    window.removeItem = (idx) => {
+        todayItems.splice(idx, 1);
+        renderList();
     };
 
-    document.getElementById('startScannerBtn').onclick = () => {
+    // 4. 掃描器控制
+    function startScanner() {
         scanner = new Html5Qrcode("reader");
-        scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-            addItem(text);
-            navigator.vibrate(100);
-        }).catch(err => alert("相機開啟失敗"));
-    };
+        scanner.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: 250 },
+            (text) => { addItem(text); scanner.stop(); }
+        ).catch(err => alert("相機啟動失敗: " + err));
+    }
 
-    document.getElementById('stopScannerBtn').onclick = () => { if(scanner) scanner.stop(); };
-    document.getElementById('clearSigBtn').onclick = () => sigPad.clear();
+    function stopScanner() {
+        if (scanner) scanner.stop();
+    }
 
-    // 生成 PDF 的關鍵邏輯 (解決空白問題)
-    document.getElementById('savePdfBtn').onclick = async () => {
-        if (todayItems.length === 0) return alert("清單是空的");
-        if (sigPad.isEmpty()) return alert("請先簽名");
+    // 5. 生成 PDF (解決空白頁核心邏輯)
+    async function generatePDF() {
+        if (todayItems.length === 0) return alert("請先加入設備");
+        if (sigPad.isEmpty()) return alert("借用人請先簽名");
 
-        const btn = document.getElementById('savePdfBtn');
-        btn.innerText = "⏳ 正在處理 PDF...";
+        const btn = document.getElementById('downloadPdf');
+        btn.innerText = "⏳ 正在生成...";
         btn.disabled = true;
 
-        // 1. 在背景建立一個乾淨的 A4 內容
-        const printArea = document.createElement('div');
-        printArea.style.padding = "40px";
-        printArea.style.color = "#000";
-
-        let itemsRows = todayItems.map((item, i) => `
+        // 建立列印專用的臨時 HTML 結構
+        const worker = document.createElement('div');
+        worker.style.padding = "30px";
+        
+        const rows = todayItems.map((it, i) => `
             <tr>
-                <td style="border:1px solid #000; padding:8px; text-align:center;">${i+1}</td>
-                <td style="border:1px solid #000; padding:8px;">${item.barcode}</td>
-                <td style="border:1px solid #000; padding:8px;">${item.name}</td>
+                <td style="border:1px solid #000; padding:8px;">${i+1}</td>
+                <td style="border:1px solid #000; padding:8px;">${it.barcode}</td>
+                <td style="border:1px solid #000; padding:8px;">${it.name}</td>
             </tr>
         `).join('');
 
-        const sigImage = sigPad.toDataURL();
-
-        printArea.innerHTML = `
+        worker.innerHTML = `
             <h1 style="text-align:center;">Equipment On Loan Form</h1>
-            <div style="margin-bottom: 20px;">
-                <p><b>Program:</b> ${document.getElementById('eventName').value}</p>
-                <p><b>Location:</b> ${document.getElementById('eventLocation').value}</p>
-                <p><b>Date:</b> ${document.getElementById('eventDate').value}</p>
-                <p><b>Borrower:</b> ${document.getElementById('borrowerName').value}</p>
-            </div>
-            <table style="width:100%; border-collapse:collapse;">
+            <p><b>活動：</b>${document.getElementById('eventName').value}</p>
+            <p><b>日期：</b>${document.getElementById('eventDate').value}</p>
+            <p><b>借用人：</b>${document.getElementById('borrower').value}</p>
+            <table style="width:100%; border-collapse:collapse; margin-top:20px;">
                 <thead>
-                    <tr style="background:#eee;">
+                    <tr style="background:#f2f2f2;">
                         <th style="border:1px solid #000; padding:8px;">#</th>
                         <th style="border:1px solid #000; padding:8px;">Barcode</th>
                         <th style="border:1px solid #000; padding:8px;">Item Name</th>
                     </tr>
                 </thead>
-                <tbody>${itemsRows}</tbody>
+                <tbody>${rows}</tbody>
             </table>
-            <div style="margin-top:30px;">
-                <p><b>Borrower Signature:</b></p>
-                <img src="${sigImage}" style="width:300px; border-bottom:1px solid #000;">
+            <div style="margin-top:40px;">
+                <p><b>借用人簽署：</b></p>
+                <img src="${sigPad.toDataURL()}" style="width:250px; border-bottom:1px solid #000;">
             </div>
         `;
+
+        const opt = {
+            margin: 10,
+            filename: '借用單_' + Date.now() + '.pdf',
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        try {
+            await html2pdf().set(opt).from(worker).save();
+            showToast("✅ PDF 已下載");
+        } catch (e) {
+            alert("生成失敗: " + e.message);
+        } finally {
+            btn.innerText = "✅ 確認並生成 PDF";
+            btn.disabled = false;
+        }
+    }
+
+    function showToast(m) {
+        const t = document.createElement('div');
+        t.className = 'toast-msg';
+        t.innerText = m;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 2000);
+    }
+</script>
+</body>
+</html>
