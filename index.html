@@ -6,7 +6,6 @@
     <title>Equipment On Loan Form</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', 'Noto Sans TC', sans-serif; }
         body { background: #f0f2f5; margin: 0; padding: 16px; padding-bottom: 80px; }
@@ -87,6 +86,15 @@
         .confirm-section { text-align: center; margin-top: 20px; margin-bottom: 20px; }
         .toast-msg { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #34c759; color: white; padding: 12px 24px; border-radius: 40px; font-weight: 500; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         .toast-error { background: #ff3b30; }
+        /* 打印样式 (用于保存 PDF) */
+        @media print {
+            body * { visibility: hidden; }
+            .print-area, .print-area * { visibility: visible; }
+            .print-area { position: absolute; top: 0; left: 0; width: 100%; margin: 0; padding: 15px; }
+            .no-print, .no-print * { display: none !important; }
+            .info-table td:first-child { width: auto; white-space: nowrap; }
+            .sign-line { width: 33%; }
+        }
     </style>
 </head>
 <body>
@@ -105,7 +113,7 @@
         </div>
         <div id="syncStatus" class="sync-status">🔄 Loading inventory from GitHub...</div>
         <div class="flex-row"><input type="text" id="searchLibrary" placeholder="🔍 Search barcode or item name" style="flex:1;"></div>
-        <div style="max-height: 300px; overflow-y: auto;"><table id="libraryTable"><thead><tr><th>Barcode</th><th>Item Name</th><th></th></td></thead><tbody id="libraryTbody"></tbody></table></div>
+        <div style="max-height: 300px; overflow-y: auto;"><table id="libraryTable"><thead><tr><th>Barcode</th><th>Item Name</th><th></th></td></thead><tbody id="libraryTbody"></tbody></td></div>
         <div class="pagination" id="paginationControls"></div>
     </div>
 
@@ -133,7 +141,7 @@
         <div class="progress-info" id="progressMsg">No items scanned yet</div>
         <div style="max-height: 300px; overflow-y: auto;">
             <table id="todayListTable">
-                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th></td></thead>
+                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th></table></thead>
                 <tbody id="todayListBody"></tbody>
             </table>
         </div>
@@ -336,8 +344,8 @@
 
     function escapeHtml(str) { if (!str) return ""; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
 
-    // 生成用于 PDF 的 HTML 内容（无任何多余字符，且样式紧凑）
-    function getPDFHtml() {
+    // 生成可打印的 HTML（无多余字符）
+    function getPrintableHTML() {
         const eventName = escapeHtml(eventNameInput.value) || "";
         const eventLocation = escapeHtml(eventLocationInput.value) || "";
         const eventDate = escapeHtml(eventDateInput.value) || "";
@@ -353,7 +361,7 @@
 
         let itemsHtml = "";
         if (todayItems.length === 0) {
-            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>No records瓣</td>";
+            itemsHtml = "<tr><td colspan='3' style='text-align:center;'>No records瓣</table>";
         } else {
             for (let i = 0; i < todayItems.length; i++) {
                 const item = todayItems[i];
@@ -437,9 +445,9 @@
                 <tr><th>Borrower Name</th><td>${extractorName}瓣</tr>
                 <tr><th>Department</th><td>${extractorDepartment}瓣</tr>
                 <tr><th>Position</th><td>${extractorPosition}瓣</tr>
-                <tr><th>Contact Phone</th><td>${extractorPhone}瓣</tr>
+                <tr><th>Contact Phone</th><td>${extractorPhone}瓣</table>
                 <tr><th>Signature Date</th><td>${signatureDate}瓣</tr>
-                <tr><th>Checkout Date</th><td>${extractDate}瓣</td>
+                <tr><th>Checkout Date</th><td>${extractDate}瓣</tr>
                 <tr><th>Return Date</th><td>${returnDate}瓣</tr>
                 <tr><th>Prepare By</th><td>${registrarName}瓣</tr>
             </table>
@@ -454,52 +462,26 @@
         </html>`;
     }
 
-    // 直接保存为 PDF（使用 html2pdf，添加到 DOM 确保渲染）
-    async function saveAsPDF() {
-        const pdfHtml = getPDFHtml();
-        // 创建临时容器
-        const container = document.createElement('div');
-        container.style.position = 'absolute';
-        container.style.left = '-9999px';
-        container.style.top = '-9999px';
-        container.innerHTML = pdfHtml;
-        document.body.appendChild(container);
-
-        // 等待所有图片（签名）加载完成
-        const images = container.querySelectorAll('img');
-        await Promise.all(Array.from(images).map(img => {
-            if (img.complete) return Promise.resolve();
-            return new Promise((resolve) => {
-                img.onload = resolve;
-                img.onerror = resolve;
-            });
-        }));
-
-        const opt = {
-            margin: [0.5, 0.5, 0.5, 0.5],
-            filename: 'Equipment_On_Loan_Form.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, letterRendering: true, useCORS: true, logging: false },
-            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-        };
-
-        try {
-            showToast("📄 Generating PDF, please wait...");
-            await html2pdf().set(opt).from(container).save();
-            showToast("✅ PDF saved successfully");
-        } catch (err) {
-            console.error(err);
-            showToast("❌ Failed to generate PDF: " + err.message, true);
-        } finally {
-            document.body.removeChild(container);
+    // 调用浏览器打印（用户可另存为 PDF）
+    function printAsPDF() {
+        const printContent = getPrintableHTML();
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            showToast("❌ Cannot open print window, please check popup blocker", true);
+            return;
         }
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+        printWindow.onafterprint = () => printWindow.close();
     }
 
-    async function confirmAndSave() {
+    async function confirmAndPrint() {
         saveEventInfo();
         saveSignatures();
-        showToast("✅ Data saved, generating PDF...");
-        await saveAsPDF();
+        showToast("✅ Data saved, opening print window...");
+        printAsPDF();
     }
 
     function setDefaultDates() {
@@ -581,10 +563,10 @@
 
     document.getElementById("startScannerBtn").onclick = startScanner;
     document.getElementById("stopScannerBtn").onclick = stopScanner;
-    document.getElementById("savePdfBtn").onclick = saveAsPDF;
+    document.getElementById("savePdfBtn").onclick = printAsPDF;
     document.getElementById("clearTodayBtn").onclick = () => { if (confirm("Clear all today's records?")) { todayItems = []; saveToday(); } };
     document.getElementById("clearSignatureBtn").onclick = clearSignature;
-    document.getElementById("confirmBtn").onclick = confirmAndSave;
+    document.getElementById("confirmBtn").onclick = confirmAndPrint;
     toggleLibraryBtn.onclick = toggleLibraryVisibility;
     searchInput.oninput = (e) => { currentSearchTerm = e.target.value; currentPage = 1; renderLibraryTable(); };
     eventNameInput.onchange = saveEventInfo; eventLocationInput.onchange = saveEventInfo; eventDateInput.onchange = saveEventInfo;
