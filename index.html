@@ -6,6 +6,8 @@
     <title>Equipment On Loan Form</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', 'Noto Sans TC', sans-serif; }
         body { background: #f0f2f5; margin: 0; padding: 16px; padding-bottom: 80px; }
@@ -143,7 +145,7 @@
             </table>
         </div>
         <div class="flex-row">
-            <button id="printReportBtn">🖨️ Print / Save as PDF</button>
+            <button id="printReportBtn">💾 Save as PDF</button>
             <button id="clearTodayBtn" class="danger">🗑️ Clear Today's List</button>
         </div>
     </div>
@@ -162,7 +164,7 @@
     </div>
 
     <div class="card confirm-section no-print">
-        <button id="confirmBtn" class="confirm-btn">✅ Confirm & Save (Open Print)</button>
+        <button id="confirmBtn" class="confirm-btn">✅ Confirm & Save as PDF</button>
     </div>
 </div>
 
@@ -454,25 +456,77 @@
         </html>`;
     }
 
-    function printReport() {
+    async function printReport() {
+        await savePDF();
+    }
+
+    async function savePDF() {
+        const { jsPDF } = window.jspdf;
+        showToast("⏳ Generating PDF, please wait...");
+
+        // Build a hidden iframe to render the report HTML
+        const iframe = document.createElement("iframe");
+        iframe.style.position = "fixed";
+        iframe.style.top = "-9999px";
+        iframe.style.left = "-9999px";
+        iframe.style.width = "794px";
+        iframe.style.height = "1123px";
+        iframe.style.border = "none";
+        document.body.appendChild(iframe);
+
         const printContent = generatePrintableHTML();
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) {
-            showToast("❌ Cannot open print window, please check popup blocker", true);
-            return;
+        iframe.contentDocument.open();
+        iframe.contentDocument.write(printContent);
+        iframe.contentDocument.close();
+
+        // Wait for fonts and images to load
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        try {
+            const canvas = await html2canvas(iframe.contentDocument.body, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: "#ffffff",
+                width: 794,
+                windowWidth: 794
+            });
+
+            const imgData = canvas.toDataURL("image/jpeg", 0.95);
+            const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const imgWidth = pageWidth;
+            const imgHeight = (canvas.height * pageWidth) / canvas.width;
+
+            let yOffset = 0;
+            let remainingHeight = imgHeight;
+
+            while (remainingHeight > 0) {
+                if (yOffset > 0) pdf.addPage();
+                pdf.addImage(imgData, "JPEG", 0, -yOffset, imgWidth, imgHeight);
+                yOffset += pageHeight;
+                remainingHeight -= pageHeight;
+            }
+
+            // Generate filename with date
+            const eventName = document.getElementById("eventName").value.trim() || "Equipment";
+            const today = new Date().toISOString().split("T")[0];
+            const filename = `${eventName}_${today}.pdf`;
+
+            pdf.save(filename);
+            showToast("✅ PDF saved: " + filename);
+        } catch (err) {
+            console.error(err);
+            showToast("❌ PDF generation failed: " + err.message, true);
+        } finally {
+            document.body.removeChild(iframe);
         }
-        printWindow.document.write(printContent);
-        printWindow.document.close();
-        printWindow.focus();
-        printWindow.print();
-        printWindow.onafterprint = () => printWindow.close();
     }
 
     async function confirmAndPrint() {
         saveEventInfo();
         saveSignatures();
-        showToast("✅ Data saved, opening print window...");
-        printReport();
+        await savePDF();
     }
 
     function setDefaultDates() {
