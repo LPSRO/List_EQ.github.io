@@ -6,7 +6,6 @@
     <title>Equipment On Loan Form</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', 'Noto Sans TC', sans-serif; }
         body { background: #f0f2f5; margin: 0; padding: 16px; padding-bottom: 80px; }
@@ -87,6 +86,33 @@
         .confirm-section { text-align: center; margin-top: 20px; margin-bottom: 20px; }
         .toast-msg { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #34c759; color: white; padding: 12px 24px; border-radius: 40px; font-weight: 500; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         .toast-error { background: #ff3b30; }
+        /* 列印样式 (用于保存 PDF) */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .print-area, .print-area * {
+                visibility: visible;
+            }
+            .print-area {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                margin: 0;
+                padding: 15px;
+            }
+            .no-print, .no-print * {
+                display: none !important;
+            }
+            .info-table td:first-child {
+                width: 1%;
+                white-space: nowrap;
+            }
+            .sign-line {
+                width: 33%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -133,7 +159,7 @@
         <div class="progress-info" id="progressMsg">No items scanned yet</div>
         <div style="max-height: 300px; overflow-y: auto;">
             <table id="todayListTable">
-                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th></td></thead>
+                <thead><tr><th>#</th><th>Barcode</th><th>Item Name</th><th></th></tr></thead>
                 <tbody id="todayListBody"></tbody>
             </table>
         </div>
@@ -160,6 +186,9 @@
         <button id="confirmBtn" class="confirm-btn">✅ Confirm & Save (Generate PDF)</button>
     </div>
 </div>
+
+<!-- 隐藏的打印区域，用于保存 PDF 时显示 -->
+<div id="printArea" style="display: none;"></div>
 
 <script>
     const MAX_ITEMS = 100;
@@ -336,8 +365,8 @@
 
     function escapeHtml(str) { if (!str) return ""; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
 
-    // 生成干净的 HTML 内容（用于 PDF）
-    function getPDFHtml() {
+    // 生成可打印的 HTML 内容（与之前相同）
+    function getPrintableHTML() {
         const eventName = escapeHtml(eventNameInput.value) || "";
         const eventLocation = escapeHtml(eventLocationInput.value) || "";
         const eventDate = escapeHtml(eventDateInput.value) || "";
@@ -359,9 +388,9 @@
                 const item = todayItems[i];
                 itemsHtml += `<tr>
                     <td style="text-align:center; padding:3px 5px;">${i+1}</td>
-                    <td style="padding:3px 5px;">${escapeHtml(item.barcode)}</td>
-                    <td style="padding:3px 5px;">${escapeHtml(item.name)}</td>
-                </tr>`;
+                    <td style="padding:3px 5px;">${escapeHtml(item.barcode)}瓣
+                    <td style="padding:3px 5px;">${escapeHtml(item.name)}瓣
+                <tr>`;
             }
         }
 
@@ -431,7 +460,7 @@
                 <tr><th>Location</th><td>${eventLocation}瓣</tr>
                 <tr><th>Usage Date</th><td>${eventDate}瓣</tr>
                 <tr><th>Borrower Name</th><td>${extractorName}瓣</tr>
-                <tr><th>Department</th><td>${extractorDepartment}瓣</tr>
+                </tr><th>Department</th><td>${extractorDepartment}瓣</tr>
                 <tr><th>Position</th><td>${extractorPosition}瓣</tr>
                 <tr><th>Contact Phone</th><td>${extractorPhone}瓣</tr>
                 <tr><th>Signature Date</th><td>${signatureDate}瓣</tr>
@@ -450,48 +479,27 @@
         </html>`;
     }
 
-    // 保存为 PDF（修复空白问题）
-    async function saveAsPDF() {
-        const htmlContent = getPDFHtml();
-        // 创建临时 iframe 或 div 来渲染 HTML，确保图片加载完成
-        const container = document.createElement('div');
-        container.style.position = 'absolute';
-        container.style.left = '-9999px';
-        container.style.top = '-9999px';
-        container.innerHTML = htmlContent;
-        document.body.appendChild(container);
-        
-        // 等待图片（签名）加载
-        const images = container.querySelectorAll('img');
-        await Promise.all(Array.from(images).map(img => {
-            if (img.complete) return Promise.resolve();
-            return new Promise(resolve => { img.onload = resolve; img.onerror = resolve; });
-        }));
-        
-        const opt = {
-            margin: [0.5, 0.5, 0.5, 0.5],
-            filename: 'Equipment_On_Loan_Form.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, letterRendering: true, useCORS: true, logging: false },
-            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-        };
-        try {
-            showToast("📄 Generating PDF, please wait...");
-            await html2pdf().set(opt).from(container).save();
-            showToast("✅ PDF saved successfully");
-        } catch (err) {
-            console.error(err);
-            showToast("❌ Failed to generate PDF: " + err.message, true);
-        } finally {
-            document.body.removeChild(container);
+    // 使用浏览器打印功能（用户可选择“另存为 PDF”）
+    function printPDF() {
+        const printContent = getPrintableHTML();
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            showToast("❌ 无法打开打印窗口，请检查是否允许弹出窗口", true);
+            return;
         }
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+        // 打印完成后关闭窗口
+        printWindow.onafterprint = () => printWindow.close();
     }
 
     async function confirmAndSave() {
         saveEventInfo();
         saveSignatures();
-        showToast("✅ Data saved, generating PDF...");
-        await saveAsPDF();
+        showToast("✅ 数据已保存，正在打开打印窗口...");
+        printPDF();
     }
 
     function setDefaultDates() {
@@ -573,7 +581,7 @@
 
     document.getElementById("startScannerBtn").onclick = startScanner;
     document.getElementById("stopScannerBtn").onclick = stopScanner;
-    document.getElementById("savePdfBtn").onclick = saveAsPDF;
+    document.getElementById("savePdfBtn").onclick = printPDF;
     document.getElementById("clearTodayBtn").onclick = () => { if (confirm("Clear all today's records?")) { todayItems = []; saveToday(); } };
     document.getElementById("clearSignatureBtn").onclick = clearSignature;
     document.getElementById("confirmBtn").onclick = confirmAndSave;
