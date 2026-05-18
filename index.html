@@ -1116,30 +1116,39 @@
         
         html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess).then(() => {
             scannerStarted = true;
-            document.getElementById("zoomContainer").style.display = "block";
             showScanLine();
             
-            // Handle Zoom
-            const zoomRange = document.getElementById("zoomRange");
-            const track = html5QrCode.getRunningTrack();
-            const capabilities = track.getCapabilities();
-            
-            if (capabilities.zoom) {
-                zoomRange.min = capabilities.zoom.min;
-                zoomRange.max = capabilities.zoom.max;
-                zoomRange.step = capabilities.zoom.step;
-                zoomRange.value = 1;
-                zoomRange.oninput = () => {
-                    track.applyConstraints({ advanced: [{ zoom: parseFloat(zoomRange.value) }] });
-                };
-            } else {
+            // Handle Zoom with safer approach
+            try {
+                const videoElement = document.querySelector("#reader video");
+                const stream = videoElement ? videoElement.srcObject : null;
+                const track = stream ? stream.getVideoTracks()[0] : null;
+                
+                if (track && typeof track.getCapabilities === 'function') {
+                    const capabilities = track.getCapabilities();
+                    if (capabilities.zoom) {
+                        const zoomRange = document.getElementById("zoomRange");
+                        document.getElementById("zoomContainer").style.display = "block";
+                        zoomRange.min = capabilities.zoom.min;
+                        zoomRange.max = capabilities.zoom.max;
+                        zoomRange.step = capabilities.zoom.step || 0.1;
+                        zoomRange.value = capabilities.zoom.min;
+                        zoomRange.oninput = () => {
+                            track.applyConstraints({ advanced: [{ zoom: parseFloat(zoomRange.value) }] }).catch(e => console.error("Zoom error", e));
+                        };
+                    }
+                }
+            } catch (zoomErr) {
+                console.warn("Zoom feature not supported or failed to init", zoomErr);
                 document.getElementById("zoomContainer").style.display = "none";
             }
             
             document.getElementById("scanStatus").innerHTML = "📸 Camera Ready<br>📌 Align barcode with yellow line<br>🔍 Use slider if too small/blurry";
         }).catch(err => { 
+            console.error("Camera start error", err);
             alert("Camera error: " + err); 
             scannerStarted = false; 
+            document.getElementById("zoomContainer").style.display = "none";
         });
     }
 
