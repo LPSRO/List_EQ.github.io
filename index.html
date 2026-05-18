@@ -122,6 +122,16 @@
         <p id="scanStatus">✅ Click "Open Camera" to start scanning</p>
         <button id="startScannerBtn">📱 Open Camera</button>
         <button id="stopScannerBtn" class="secondary">⏹️ Stop Camera</button>
+        
+        <div id="zoomContainer" style="display: none; margin-top: 15px; background: #f0f0f0; padding: 10px; border-radius: 12px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem;">🔍 Zoom / Focus Adjustment</label>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span>1x</span>
+                <input type="range" id="zoomRange" min="1" max="5" step="0.1" value="1" style="flex: 1; margin: 0;">
+                <span>5x</span>
+            </div>
+            <p style="font-size: 0.75rem; color: #666; margin-top: 5px;">If blurry, pull back slightly and use zoom</p>
+        </div>
         <div class="manual-input-area">
             <h3>✏️ Manual Barcode Entry</h3>
             <div class="flex-row">
@@ -1084,70 +1094,68 @@
 
     function startScanner() {
         if (scannerStarted) return;
-        // Specify supported formats to improve speed and accuracy
         html5QrCode = new Html5Qrcode("reader", { 
             formatsToSupport: [ 
                 Html5QrcodeSupportedFormats.CODE_128,
                 Html5QrcodeSupportedFormats.EAN_13,
-                Html5QrcodeSupportedFormats.EAN_8,
                 Html5QrcodeSupportedFormats.CODE_39,
                 Html5QrcodeSupportedFormats.UPC_A,
-                Html5QrcodeSupportedFormats.UPC_E,
-                Html5QrcodeSupportedFormats.ITF,
-                Html5QrcodeSupportedFormats.QR_CODE
-            ],
-            verbose: false
+                Html5QrcodeSupportedFormats.ITF
+            ]
         });
         
         const config = { 
-            fps: 30, // Higher FPS for smoother scanning
-            qrbox: function(viewfinderWidth, viewfinderHeight) {
-                // Wide rectangle is better for barcodes
-                const width = viewfinderWidth * 0.8;
-                const height = 150; 
-                return { width: width, height: height };
-            },
-            aspectRatio: 1.0, 
+            fps: 25, 
+            qrbox: (w, h) => ({ width: w * 0.85, height: 160 }),
             videoConstraints: { 
                 facingMode: "environment", 
-                width: { ideal: 1920 }, // Higher resolution
-                height: { ideal: 1080 },
-                focusMode: "continuous",
-                advanced: [{ focusMode: "continuous" }, { zoom: 1.0 }]
-            },
-            experimentalFeatures: {
-                useBarCodeDetectorIfSupported: true // Use native browser API if available
+                width: { ideal: 1920 },
+                height: { ideal: 1080 }
             }
         };
         
-        html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, (errMsg) => {}).then(() => {
+        html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess).then(() => {
             scannerStarted = true;
-            isInCooldown = false;
-            document.getElementById("scanStatus").innerHTML = "📸 Camera is open<br>📌 Align barcode horizontally with the yellow line<br>💡 Keep 10-15cm distance, double‑tap to focus";
+            document.getElementById("zoomContainer").style.display = "block";
             showScanLine();
-            setTimeout(() => {
-                const video = document.querySelector("#reader video");
-                if (video) {
-                    video.style.cursor = "pointer";
-                    video.addEventListener("dblclick", async () => {
-                        try {
-                            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                            if (html5QrCode && scannerStarted) {
-                                await html5QrCode.stop();
-                                await html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, (errMsg) => {});
-                                showToast("🔍 Trying to refocus");
-                            }
-                        } catch (err) { showToast("⚠️ Focus failed, please adjust distance", true); }
-                    });
-                }
-            }, 1000);
-        }).catch(err => { alert("Cannot open camera, please confirm camera permission"); scannerStarted = false; hideScanLine(); });
+            
+            // Handle Zoom
+            const zoomRange = document.getElementById("zoomRange");
+            const track = html5QrCode.getRunningTrack();
+            const capabilities = track.getCapabilities();
+            
+            if (capabilities.zoom) {
+                zoomRange.min = capabilities.zoom.min;
+                zoomRange.max = capabilities.zoom.max;
+                zoomRange.step = capabilities.zoom.step;
+                zoomRange.value = 1;
+                zoomRange.oninput = () => {
+                    track.applyConstraints({ advanced: [{ zoom: parseFloat(zoomRange.value) }] });
+                };
+            } else {
+                document.getElementById("zoomContainer").style.display = "none";
+            }
+            
+            document.getElementById("scanStatus").innerHTML = "📸 Camera Ready<br>📌 Align barcode with yellow line<br>🔍 Use slider if too small/blurry";
+        }).catch(err => { 
+            alert("Camera error: " + err); 
+            scannerStarted = false; 
+        });
     }
 
     function stopScanner() {
         if (html5QrCode && scannerStarted) {
-            html5QrCode.stop().then(() => { scannerStarted = false; document.getElementById("scanStatus").innerText = "⏹️ Camera stopped"; hideScanLine(); }).catch(()=>{});
-        } else { scannerStarted = false; hideScanLine(); }
+            html5QrCode.stop().then(() => { 
+                scannerStarted = false; 
+                document.getElementById("scanStatus").innerText = "⏹️ Camera stopped"; 
+                document.getElementById("zoomContainer").style.display = "none";
+                hideScanLine(); 
+            }).catch(()=>{});
+        } else { 
+            scannerStarted = false; 
+            document.getElementById("zoomContainer").style.display = "none";
+            hideScanLine(); 
+        }
     }
 
     function escapeHtml(str) { if (!str) return ""; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
